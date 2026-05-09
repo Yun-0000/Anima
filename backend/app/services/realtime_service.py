@@ -42,7 +42,7 @@ class RealtimeService:
 
         return {
             "type": "realtime",
-            "model": os.getenv("OPENAI_REALTIME_MODEL", "gpt-realtime-1.5"),
+            "model": os.getenv("OPENAI_REALTIME_MODEL", "gpt-realtime-2"),
             "instructions": realtime_instructions,
             "audio": {
                 "input": {

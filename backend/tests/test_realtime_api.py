@@ -132,12 +132,12 @@ def test_openai_session_config_uses_sts_without_avatar_tool(monkeypatch):
     assert "Action Guidelines" not in session["instructions"]
 
 
-def test_openai_session_config_defaults_to_realtime_1_5(monkeypatch):
+def test_openai_session_config_defaults_to_realtime_2(monkeypatch):
     monkeypatch.delenv("OPENAI_REALTIME_MODEL", raising=False)
 
     session = realtime_module.realtime_service.build_openai_session_config("jane")
 
-    assert session["model"] == "gpt-realtime-1.5"
+    assert session["model"] == "gpt-realtime-2"
 
 
 def test_openai_session_config_uses_character_specific_default_voices(monkeypatch):
