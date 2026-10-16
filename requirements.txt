@@ -1,1 +1,7 @@
--r backend/requirements.txt
+# Keep in sync with backend/requirements.txt; Vercel parses this file directly.
+fastapi==0.136.1
+uvicorn[standard]==0.24.0
+python-dotenv==1.2.2
+openai==3.22.1
+httpx==0.28.1
+pydantic==2.13.3
