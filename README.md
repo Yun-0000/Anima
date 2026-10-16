@@ -20,6 +20,8 @@
 </p>
 
 <p align="center">
+  <a href="https://anima-io.vercel.app"><b>Live demo</b></a>
+  &nbsp;·&nbsp;
   <a href="#quick-start"><b>Quick start</b></a>
   &nbsp;·&nbsp;
   <a href="#voice-mode"><b>Voice mode</b></a>
@@ -79,7 +81,7 @@
 
 ## Quick start
 
-You need **Python 3.12** and **Node 20+**.
+Try it online at **[anima-io.vercel.app](https://anima-io.vercel.app)**, or run it yourself. You need **Python 3.12** and **Node 20+**.
 
 ```bash
 # Backend
@@ -194,7 +196,7 @@ cd backend && .venv/bin/python -m pytest
 - [x] Three characters with their own personalities and voices
 - [x] A natural, bundled motion set
 - [x] Live voice, with body language directed separately from speech
-- [ ] A hosted demo
+- [x] A hosted demo at [anima-io.vercel.app](https://anima-io.vercel.app)
 - [ ] Memory across visits
 - [ ] More rooms and times of day
 
