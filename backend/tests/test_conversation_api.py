@@ -51,7 +51,7 @@ def test_text_conversation_endpoint_reports_a_failed_reply(monkeypatch):
     assert response.status_code == 502
 
 
-def test_speech_streams_only_prepared_replies(monkeypatch):
+def test_speech_streams_only_signed_replies(monkeypatch):
     from app.services.conversation_service import ConversationService
     from app.characters import get_character_profile
     monkeypatch.setenv("ELEVENLABS_API_KEY", "test-key")
@@ -61,13 +61,13 @@ def test_speech_streams_only_prepared_replies(monkeypatch):
         yield f"{character.id}:{text}".encode()
     monkeypatch.setattr(service.tts, "stream", stream)
     conversation_module.conversation_service = service
-    speech_id = service.tts.prepare("Hi there.", get_character_profile("kai"))
+    token = service.tts.link("Hi there.", get_character_profile("kai"))
 
     client = TestClient(app)
-    response = client.get(f"/api/speech/{speech_id}")
+    response = client.get(f"/api/speech/{token}")
     assert response.status_code == 200 and response.headers["content-type"] == "audio/mpeg"
     assert response.content == b"kai:Hi there."
-    assert client.get("/api/speech/unknown").status_code == 404
+    assert client.get("/api/speech/unknown.0000").status_code == 404
 
 
 def test_a_message_longer_than_a_history_turn_is_refused():

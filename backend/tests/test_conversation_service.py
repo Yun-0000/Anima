@@ -21,7 +21,7 @@ class DummyTTS:
     def __init__(self):
         self.calls = []
 
-    def prepare(self, text, character):
+    def link(self, text, character):
         self.calls.append({"text": text, "character": character.id})
         return "abc"
 

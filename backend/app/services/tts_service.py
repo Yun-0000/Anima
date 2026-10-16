@@ -1,11 +1,13 @@
+import base64
+import hashlib
+import hmac
+import json
 import os
-from collections import OrderedDict
-from typing import AsyncIterator
-from uuid import uuid4
+from typing import AsyncIterator, Optional
 
 import httpx
 
-from ..characters import CharacterProfile, voice_id
+from ..characters import CharacterProfile, get_character_profile, voice_id
 
 
 class TTSService:
@@ -15,16 +17,22 @@ class TTSService:
         self.key = os.getenv("ELEVENLABS_API_KEY")
         # Eleven v4 Turbo ranks first in blind tests; streamed, its first audio comes in about 0.2 s.
         self.model = os.getenv("ELEVENLABS_TTS_MODEL", "eleven_v4_turbo")
-        # Kept in memory by one server process; a shared store is needed if the backend runs several workers.
-        self.pending: OrderedDict[str, tuple[str, CharacterProfile]] = OrderedDict()
+        self.secret = hashlib.sha256(f"anima-speech:{self.key}".encode()).digest()
 
-    def prepare(self, text: str, character: CharacterProfile) -> str:
-        """Keeps a reply for /api/speech/{id}, so only replies the server wrote can be spoken."""
-        speech_id = uuid4().hex
-        self.pending[speech_id] = (text, character)
-        while len(self.pending) > 50:
-            self.pending.popitem(last=False)
-        return speech_id
+    def link(self, text: str, character: CharacterProfile) -> str:
+        """A signed speech link: only replies the server wrote can be spoken, and any server instance can check it."""
+        payload = base64.urlsafe_b64encode(json.dumps([character.id, text], ensure_ascii=False).encode()).decode().rstrip("=")
+        return f"{payload}.{self._sign(payload)}"
+
+    def open(self, token: str) -> Optional[tuple[str, CharacterProfile]]:
+        payload, _, signature = token.partition(".")
+        if not hmac.compare_digest(signature, self._sign(payload)):
+            return None
+        character_id, text = json.loads(base64.urlsafe_b64decode(payload + "=" * (-len(payload) % 4)))
+        return text, get_character_profile(character_id)
+
+    def _sign(self, payload: str) -> str:
+        return hmac.new(self.secret, payload.encode(), "sha256").hexdigest()[:32]
 
     async def stream(self, text: str, character: CharacterProfile) -> AsyncIterator[bytes]:
         try:

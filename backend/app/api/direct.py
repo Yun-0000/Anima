@@ -1,13 +1,14 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
 from ..models.schemas import DirectRequest, DirectResponse
+from ..rate_limit import limit
 from ..services.director_service import DirectorService
 
 router = APIRouter(prefix="/api", tags=["direct"])
 director: DirectorService | None = None
 
 
-@router.post("/direct", response_model=DirectResponse)
+@router.post("/direct", response_model=DirectResponse, dependencies=[Depends(limit("direct", 200, 600))])
 async def direct_line(payload: DirectRequest):
     """Gesture and expression for one line of the conversation, said by the character or by the user."""
     global director

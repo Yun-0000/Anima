@@ -85,7 +85,7 @@ You need **Python 3.12** and **Node 20+**.
 # Backend
 cd backend
 python3.12 -m venv .venv
-.venv/bin/python -m pip install -r requirements.txt
+.venv/bin/python -m pip install -r requirements-dev.txt
 cp .env.example .env
 .venv/bin/python -m uvicorn app.main:app --port 8001
 ```

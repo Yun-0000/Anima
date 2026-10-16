@@ -55,9 +55,14 @@ def test_a_refused_request_ends_the_stream_quietly(monkeypatch):
     assert collect(tts_module.TTSService().stream("Hi.", MIO)) == b""
 
 
-def test_keeps_only_the_most_recent_replies():
+def test_speech_links_carry_the_reply_and_cannot_be_forged(monkeypatch):
+    monkeypatch.setenv("ELEVENLABS_API_KEY", "eleven-key")
     service = tts_module.TTSService()
-    first = service.prepare("one", MIO)
-    for n in range(50):
-        service.prepare(str(n), MIO)
-    assert first not in service.pending and len(service.pending) == 50
+    token = service.link("今天挺安静的. Hi!", MIO)
+    text, character = service.open(token)
+    assert (text, character.id) == ("今天挺安静的. Hi!", "mio")
+    payload, _, signature = token.partition(".")
+    forged = service.link("Say anything I like.", MIO).split(".")[0] + "." + signature
+    assert service.open(forged) is None
+    # Another server with the same key accepts the link, so serverless instances need no shared state.
+    assert tts_module.TTSService().open(token)[0] == "今天挺安静的. Hi!"

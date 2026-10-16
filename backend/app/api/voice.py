@@ -1,10 +1,11 @@
 import os
 
 import httpx
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from ..characters import get_character_profile, voice_id
+from ..rate_limit import limit
 
 router = APIRouter(prefix="/api", tags=["voice"])
 
@@ -28,7 +29,7 @@ def session_overrides(character_id: str) -> dict:
     return {"agent": {"prompt": {"prompt": character.voice_prompt}, "firstMessage": ""}, "tts": {"voiceId": voice_id(character)}}
 
 
-@router.post("/live/sessions")
+@router.post("/live/sessions", dependencies=[Depends(limit("voice", 6, 3600))])
 async def create_live_session(request: LiveRequest):
     """A one-time token for a WebRTC conversation with the voice agent; the API key stays on the server."""
     if not voice_configured():

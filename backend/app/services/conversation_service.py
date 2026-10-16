@@ -50,4 +50,4 @@ class ConversationService:
         if self.tts is None:
             return ConversationResponse(text=reply, audio_url="", duration=0)
         # The browser streams the speech from this URL, so the text arrives without waiting for audio.
-        return ConversationResponse(text=reply, audio_url=f"/api/speech/{self.tts.prepare(reply, character)}", duration=speech_seconds(reply))
+        return ConversationResponse(text=reply, audio_url=f"/api/speech/{self.tts.link(reply, character)}", duration=speech_seconds(reply))
