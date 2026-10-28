@@ -12,7 +12,7 @@ import type { EmotionName } from '../types/expression'
 
 /** Seconds a nod or head shake takes. */
 const GESTURE_SECONDS = 1.1
-/** The camera never moves: one framed view of the room, like a diorama. */
+/** The camera never moves. */
 const CAMERA = { position: [0, 1.32, 4.4], target: [0, 0.92, 0], fov: 32 } as const
 /** Narrow cards pull the view wider so at least this much floor width (world units, at the character) stays visible. */
 const MIN_HALF_WIDTH = 1.05
@@ -133,12 +133,13 @@ export class Stage {
     if (activity === this.activity) return
     this.activity = activity; this.motion?.setActivity(activity); this.resume()
   }
-  /** Plays what a reply asks for: a body motion, or a head gesture on top of the current one. */
+  /** A body motion, or a head gesture on top of the current one. */
   play(action: MotionName | Gesture) {
     if ((gestures as readonly string[]).includes(action)) this.gesture = { name: action as Gesture, start: this.elapsed }
     else void this.motion?.play(action as MotionName)
     this.resume()
   }
+  explain() { this.motion?.explain(); this.resume() }
   /** Emotions blend in and out over a few frames instead of snapping. */
   setEmotion(emotion: EmotionName) {
     if (emotion === 'wink') { this.wink(); return }
@@ -148,7 +149,6 @@ export class Stage {
     this.winkSide = Math.random() < 0.5 ? 'blinkLeft' : 'blinkRight'
     this.winkUntil = this.elapsed + 0.25; this.resume()
   }
-  /** Makes sure a frame is coming; the running loop and its clock are left alone. */
   private onPointer = (event: PointerEvent) => {
     const rect = this.container.getBoundingClientRect()
     this.pointer.set((event.clientX - rect.left) / rect.width * 2 - 1, 1 - (event.clientY - rect.top) / rect.height * 2)
@@ -194,8 +194,7 @@ export class Stage {
       if (head) { head.rotation.x -= this.nod.x; head.rotation.y -= this.nod.y }
       this.motion?.update(dt)
       if (vrm) {
-        // A living layer on every motion, so the rests between idles never freeze: breathing,
-        // a slow shift of weight, and the head drifting a little (slow sines that rarely line up).
+        // Breathing, a shift of weight and a head drift (slow sines that rarely line up), so rests never freeze.
         this.breath = Math.sin(this.elapsed * 1.9) * 0.012
         this.sway = Math.sin(this.elapsed * 0.45) * 0.012 + Math.sin(this.elapsed * 0.17) * 0.008
         this.nod.set(Math.sin(this.elapsed * 0.31) * 0.02, Math.sin(this.elapsed * 0.23 + 1) * 0.035, 0)

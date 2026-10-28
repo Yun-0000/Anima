@@ -4,11 +4,10 @@ import { CHARACTER_OPTIONS } from '../characters/catalog'
 
 const host = CHARACTER_OPTIONS[0]
 
-/** The intro: the first character in their room, waving, next to a short description of the project. */
 export function LandingPage() {
   return (
     <div className="scene-page landing">
-      <StageView character={host} idle="idle_249" rests />
+      <StageView character={host} idle="idle_249" greet="wave" rests />
       <header className="overlay-bar">
         <span className="brand">anima</span>
       </header>

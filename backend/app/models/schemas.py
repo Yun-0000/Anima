@@ -1,9 +1,9 @@
 from pydantic import BaseModel, Field
-from typing import Literal
+from typing import Annotated, Literal
 
 EmotionType = Literal["neutral", "happy", "sad", "surprised", "angry", "relaxed", "wink"]
-# Gestures the director can choose; "none" leaves the body as it is.
-GestureType = Literal["none", "wave", "nod", "shake", "shrug"]
+# Gestures the director can choose; "none" leaves the body as it is, "explain" talks with the hands.
+GestureType = Literal["none", "wave", "nod", "shake", "shrug", "explain"]
 
 
 class ConversationResponse(BaseModel):
@@ -20,24 +20,27 @@ class ChatTurn(BaseModel):
 
 
 class TextConversationRequest(BaseModel):
-    """Request body for typed text conversation."""
-
     message: str = Field(default="", max_length=2000)
     # The earlier turns of this conversation. The browser keeps them; the server stores nothing.
     history: list[ChatTurn] = Field(default_factory=list, max_length=20)
 
 
-class DirectRequest(BaseModel):
-    """One line of the conversation to direct."""
+class Line(BaseModel):
+    speaker: Literal["character", "user"]
+    text: str = Field(min_length=1, max_length=2000)
 
+
+class DirectRequest(BaseModel):
     character_id: str = Field(default="mio", max_length=64)
     speaker: Literal["character", "user"]
-    line: str = Field(min_length=1, max_length=2000)
-    previous: str = Field(default="", max_length=2000)
+    lines: list[Annotated[str, Field(min_length=1, max_length=2000)]] = Field(min_length=1, max_length=16)
+    context: list[Line] = Field(default_factory=list, max_length=8)
+
+
+class Direction(BaseModel):
+    gesture: GestureType
+    emotion: EmotionType
 
 
 class DirectResponse(BaseModel):
-    """The character's gesture and expression for that line."""
-
-    gesture: GestureType
-    emotion: EmotionType
+    directions: list[Direction]

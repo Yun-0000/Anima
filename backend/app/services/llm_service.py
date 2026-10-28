@@ -6,8 +6,6 @@ import openai
 
 
 class LLMService:
-    """The character's chat replies, from an OpenAI model."""
-
     def __init__(self):
         # The SDK retries one transient failure on its own.
         self.client = openai.AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"), timeout=20, max_retries=1)

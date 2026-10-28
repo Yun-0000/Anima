@@ -6,11 +6,10 @@ import { CHARACTER_OPTIONS } from '../characters/catalog'
 
 type Model = { id: string; label: string; url: string }
 
-/** The app's characters; a dropped .vrm is added for the session. */
 const MODELS: Model[] = CHARACTER_OPTIONS.map((character) => ({ id: character.id, label: character.label, url: character.modelUrl }))
 const EXPRESSIONS: EmotionName[] = [...ALL_EMOTIONS, 'wink']
 
-/** For checking characters, motions and expressions; drop in a .vrm or .glb file to try it. Open /lab. */
+/** /lab, not linked from the app: check characters, motions and expressions, or drop in a .vrm or .glb. */
 export function LabPage() {
   const host = useRef<HTMLDivElement>(null)
   const stage = useRef<Stage | null>(null)
@@ -48,7 +47,6 @@ export function LabPage() {
     if ((gestures as readonly string[]).includes(name)) stage.current?.play(name as Gesture)
     else { void stage.current?.motion?.play(name as MotionName); setPlaying(name) }
   }
-  // Each version of a motion is checked on its own.
   const playFile = (name: MotionName, file: string) => { void stage.current?.motion?.play(name, { file }); setPlaying(file) }
   const express = (name: EmotionName) => { stage.current?.setEmotion(name); if (name !== 'wink') setExpression(name) }
   const drop = (event: DragEvent) => {

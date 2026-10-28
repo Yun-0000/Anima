@@ -1,4 +1,4 @@
-# Asset License Notes
+# Asset license notes
 
 ## Characters (Mio, Rin, Kai)
 
@@ -10,6 +10,6 @@ The three characters are VRoid Project's sample avatars AvatarSample_A (Mio), Av
 
 Nodding and head shaking are procedural (code), not animation files.
 
-## Generated Audio
+## Generated audio
 
 Spoken replies come from ElevenLabs and are played directly in the browser. The backend never writes audio to disk, and no generated audio is part of this repository.

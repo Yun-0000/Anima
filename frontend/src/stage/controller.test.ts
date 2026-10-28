@@ -44,15 +44,31 @@ it('dozing closes the eyes while standing and waking opens them', async () => {
   expect(controller.dozing).toBe(false)
   controller.dispose()
 })
-it('talks with its hands while speaking and stops after a real silence', async () => {
+it('speaks standing, going on through the idle versions', async () => {
+  const { controller } = setup()
+  controller.autonomous = false
+  await controller.play('idle', { dwell: 15 })
+  const first = controller.file
+  controller.setActivity('speaking'); await settle()
+  expect(controller.current).toBe('idle')
+  // Instead of the long rest of being alone: the one-second test clip, then at most 2.5 s.
+  controller.update(3.6); await settle()
+  expect(controller.current).toBe('idle')
+  expect(controller.file).not.toBe(first)
+  controller.dispose()
+})
+it('talks with its hands once it explains, and stops after a real silence', async () => {
   const { controller } = setup()
   controller.autonomous = false
   await controller.play('idle')
-  controller.setActivity('speaking'); await settle()
+  controller.setActivity('speaking'); controller.explain(); await settle()
   expect(controller.current).toBe('talk')
   controller.setActivity('idle'); controller.update(0.5); await settle()
   expect(controller.current).toBe('talk')
   controller.update(1); await settle()
+  expect(controller.current).toBe('idle')
+  // The next reply starts standing again.
+  controller.setActivity('speaking'); await settle()
   expect(controller.current).toBe('idle')
   controller.dispose()
 })

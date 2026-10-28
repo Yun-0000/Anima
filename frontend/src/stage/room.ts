@@ -8,7 +8,7 @@ import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeom
  */
 export function addRoom(scene: THREE.Scene) {
   const materials = new Map<number, THREE.MeshStandardMaterial>()
-  // A little self-light keeps the colors soft, like a painted backdrop.
+  // A little self-light keeps the colors soft.
   const material = (color: number) => {
     if (!materials.has(color)) materials.set(color, new THREE.MeshStandardMaterial({ color, roughness: 0.9, emissive: color, emissiveIntensity: 0.18 }))
     return materials.get(color)!
@@ -25,13 +25,12 @@ export function addRoom(scene: THREE.Scene) {
   const depth = front - back, middle = (front + back) / 2
   const colors = { wall: 0xefe4d3, wainscot: 0xe4d6c1, trim: 0xf7f1e7, side: 0xe7dac7, wood: 0xb48b66, woodDark: 0x8f6b4e, sage: 0x93a98f, rose: 0xd9b8ad }
 
-  // Walls: cream above, paneled wainscot below a chair rail.
+  // Walls, wainscot and chair rail
   box(halfWidth * 2, height, 0.08, colors.wall, 0, height / 2, back, false)
   box(halfWidth * 2, 0.62, 0.06, colors.wainscot, 0, 0.31, back + 0.04, false)
   box(halfWidth * 2, 0.035, 0.05, colors.trim, 0, 0.635, back + 0.08)
   box(halfWidth * 2, 0.09, 0.04, colors.trim, 0, 0.045, back + 0.08)
   for (let x = -1.65; x <= 1.66; x += 0.825) {
-    // Thin molding frames turn the lower wall into neat panels.
     for (const [w, h, dx, dy] of [[0.62, 0.016, 0, 0.21], [0.62, 0.016, 0, -0.21], [0.016, 0.42, -0.31, 0], [0.016, 0.42, 0.31, 0]]) {
       box(w, h, 0.012, colors.trim, x + dx, 0.34 + dy, back + 0.075, false)
     }
@@ -43,8 +42,7 @@ export function addRoom(scene: THREE.Scene) {
     box(0.04, 0.09, depth, colors.trim, side * (halfWidth - 0.06), 0.045, middle)
   }
 
-  // Oak floor: narrow boards running toward the viewer, staggered, over darker seams.
-  // The seam color sits well below the boards: close beneath them it depth-fights with the rug on some GPUs.
+  // Floor. The seam color sits well below the boards: close beneath them it depth-fights with the rug on some GPUs.
   mesh(new THREE.BoxGeometry(halfWidth * 2, 0.02, depth), colors.woodDark, 0, -0.08, middle, false)
   const boards = [0xcaa47f, 0xc39b75, 0xd0ab87, 0xc6a07b]
   for (let index = 0, x = -halfWidth + 0.09; x < halfWidth; index++, x += 0.18) {
@@ -57,7 +55,7 @@ export function addRoom(scene: THREE.Scene) {
     }
   }
 
-  // Oval rug in cream with a sage border. Its top (0.012) is the floor the feet stand on; the pattern lies flat on it.
+  // Rug. Its top (0.012) is the floor the feet stand on.
   const rug = mesh(new THREE.CylinderGeometry(0.86, 0.86, 0.012, 72), colors.sage, 0, 0.006, 0.08, false)
   rug.scale.z = 0.78
   for (const [inner, outer] of [[0, 0.69], [0.7, 0.8]]) {
@@ -65,7 +63,7 @@ export function addRoom(scene: THREE.Scene) {
     ring.rotation.x = -Math.PI / 2; ring.scale.y = 0.78
   }
 
-  // Left: floating shelf with books, a small plant and fairy lights along its edge.
+  // Left shelf
   const shelfY = 1.3
   box(1.0, 0.05, 0.22, colors.wood, -1.12, shelfY, back + 0.15)
   const spines = [[0.3, 0x657c68], [0.27, 0x566c80], [0.24, 0xeee2c8], [0.29, 0xc1a578], [0.31, 0x515b73]]
@@ -83,7 +81,7 @@ export function addRoom(scene: THREE.Scene) {
     const t = index / 10
     mesh(new THREE.SphereGeometry(0.013, 8, 6), bulbs, -1.6 + t * 0.96, shelfY - 0.05 - Math.sin(t * Math.PI * 2) ** 2 * 0.05, back + 0.27, false)
   }
-  // Two frames below the shelf: a landscape and a small botanical print.
+  // Frames
   const frame = (w: number, h: number, x: number, y: number, paint: (cx: number, cy: number) => void) => {
     box(w, h, 0.025, colors.wood, x, y, back + 0.09)
     box(w - 0.05, h - 0.05, 0.01, 0xfaf4e8, x, y, back + 0.105, false)
@@ -98,7 +96,7 @@ export function addRoom(scene: THREE.Scene) {
     for (const [dx, dy] of [[-0.03, 0.02], [0.03, -0.01], [-0.025, -0.04]]) mesh(new THREE.CircleGeometry(0.022, 12), glow(0x93a98f), x + dx, y + dy, back + 0.113, false)
   })
 
-  // Left: low console with a vase of branches and a stack of books, a tall plant in the corner.
+  // Console, vase and corner plant
   const consoleX = -1.32, consoleZ = back + 0.3
   box(0.95, 0.04, 0.32, colors.wood, consoleX, 0.44, consoleZ)
   box(0.91, 0.3, 0.3, colors.wood, consoleX, 0.27, consoleZ)
@@ -109,7 +107,6 @@ export function addRoom(scene: THREE.Scene) {
   for (const dx of [-0.42, 0.42]) box(0.035, 0.12, 0.035, colors.woodDark, consoleX + dx, 0.06, consoleZ)
   mesh(new THREE.CylinderGeometry(0.045, 0.06, 0.2, 20), 0xe9e1d4, consoleX - 0.25, 0.56, consoleZ)
   for (let index = 0; index < 5; index++) {
-    // Branches fanning out of the vase, each with a few blossoms along its upper half.
     const lean = (index - 2) * 0.2, length = 0.34 + (index % 2) * 0.06
     const stem = mesh(new THREE.CylinderGeometry(0.004, 0.004, length, 5), colors.woodDark, consoleX - 0.25 + Math.sin(lean) * length / 2, 0.64 + Math.cos(lean) * length / 2, consoleZ, false)
     stem.rotation.z = -lean
@@ -130,7 +127,7 @@ export function addRoom(scene: THREE.Scene) {
     leaf.scale.set(0.55, 1.1, 0.16); leaf.rotation.set(0.1, angle, -Math.sin(angle) * 0.6)
   }
 
-  // Right: arched window with panes, a pot on the sill, long curtains and late-afternoon light.
+  // Window and curtains
   const arch = (width: number, h: number) => {
     const shape = new THREE.Shape(); const r = width / 2
     shape.moveTo(-r, 0); shape.lineTo(r, 0); shape.lineTo(r, h - r)
@@ -158,7 +155,6 @@ export function addRoom(scene: THREE.Scene) {
   succulent.scale.y = 0.7
   box(1.42, 0.022, 0.022, colors.woodDark, windowX, 1.84, back + 0.2)
   for (const side of [-1, 1]) {
-    // Soft folds: narrow panels staggered in depth, gathered toward the wall.
     for (let fold = 0; fold < 5; fold++) {
       box(0.075, 1.36, 0.025, fold % 2 ? 0xd2b0a5 : colors.rose, windowX + side * (0.43 + fold * 0.055), 1.15, back + 0.19 + (fold % 2) * 0.025)
     }
@@ -168,7 +164,7 @@ export function addRoom(scene: THREE.Scene) {
   const sunlight = new THREE.Mesh(new THREE.ShapeGeometry(beam), new THREE.MeshBasicMaterial({ color: 0xfff1cc, transparent: true, opacity: 0.28, depthWrite: false }))
   sunlight.rotation.x = -Math.PI / 2; sunlight.position.set(windowX + 0.05, 0.017, back + 0.14); scene.add(sunlight)
 
-  // Right corner: floor lamp glowing warm.
+  // Floor lamp
   const lampX = 1.78, lampZ = -0.62
   mesh(new THREE.CylinderGeometry(0.12, 0.14, 0.025, 24), colors.woodDark, lampX, 0.0125, lampZ)
   mesh(new THREE.CylinderGeometry(0.01, 0.01, 1.2, 8), colors.woodDark, lampX, 0.6, lampZ)
@@ -177,7 +173,7 @@ export function addRoom(scene: THREE.Scene) {
   const lampLight = new THREE.PointLight(0xffc98a, 0.8, 2.6, 1.6)
   lampLight.position.set(lampX, 1.25, lampZ); scene.add(lampLight)
 
-  // Foreground: a tufted sage pouf and a small stack of books give the room depth.
+  // Pouf and books in front
   const pouf = mesh(new THREE.SphereGeometry(0.25, 40, 24), colors.sage, -1.12, 0.12, 0.7)
   pouf.scale.set(1, 0.5, 0.86)
   mesh(new THREE.SphereGeometry(0.018, 10, 8), 0x7d9479, -1.12, 0.245, 0.7, false)

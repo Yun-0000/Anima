@@ -5,7 +5,7 @@
 <h1 align="center">Anima</h1>
 
 <p align="center">
-  <strong>Anime characters that feel alive, right in your browser.</strong><br>
+  <strong>Anime characters that feel alive, in your browser.</strong><br>
   Chat with them or just talk out loud. They answer in their own voice,<br>
   move while they speak and react to what you say.
 </p>
@@ -46,42 +46,9 @@
   </tr>
 </table>
 
-## Highlights
-
-<table>
-  <tr>
-    <td width="33%" valign="top">
-      <h3>Talk out loud</h3>
-      Press the microphone and speak. The character answers in under a second, in your language, and you can cut in at any time.
-    </td>
-    <td width="33%" valign="top">
-      <h3>One voice each</h3>
-      Every character keeps the same ElevenLabs voice in Chat and in Voice mode.
-    </td>
-    <td width="33%" valign="top">
-      <h3>A director for the body</h3>
-      A small model reads every line, yours and theirs, and decides when to wave, nod, shake the head or shrug, and which face to make.
-    </td>
-  </tr>
-  <tr>
-    <td valign="top">
-      <h3>Natural motion</h3>
-      Motion-capture idles, talk, wave and shrug, retargeted onto each VRM, with blinking, breathing and a slow shift of weight.
-    </td>
-    <td valign="top">
-      <h3>A room of their own</h3>
-      A small, warm room seen from one fixed camera. Left alone, the characters idle, look at your pointer and now and then doze off.
-    </td>
-    <td valign="top">
-      <h3>Works without keys</h3>
-      With no keys, the rooms, characters and motions all work and replies are scripted. Add your own keys for real conversation.
-    </td>
-  </tr>
-</table>
-
 ## Quick start
 
-Try it online at **[anima-io.vercel.app](https://anima-io.vercel.app)**, or run it yourself. You need **Python 3.12** and **Node 20+**.
+Try it online at [anima-io.vercel.app](https://anima-io.vercel.app), or run it yourself with Python 3.12 and Node 20+.
 
 ```bash
 # Backend
@@ -99,7 +66,7 @@ npm install
 npm run dev
 ```
 
-Open **http://127.0.0.1:4173**, pick a character and say hi.
+Open http://127.0.0.1:4173, pick a character and say hi.
 
 ### Keys
 
@@ -120,13 +87,11 @@ Voice mode runs on an ElevenLabs voice agent. Give your ElevenLabs key the Eleve
 backend/.venv/bin/python scripts/setup_voice_agent.py
 ```
 
-Add the `ELEVENLABS_AGENT_ID` it prints to `backend/.env` and restart the backend. In a room, choose **Voice**, press the microphone and talk. Press it again to stop.
+Add the `ELEVENLABS_AGENT_ID` it prints to `backend/.env` and restart the backend. In a room, choose **Voice**, press the microphone and talk. The character answers in your language in under a second, and you can cut in at any time. Press the microphone again to stop.
 
-> [!NOTE]
-> One agent serves every character: each session sends the character's prompt and voice. The backend only hands the browser a one-time token, and the audio goes over WebRTC between your browser and ElevenLabs. A session ends after a minute of silence, after ten minutes at most, or when you leave the room or switch to Chat.
+One agent serves every character: each session sends the character's prompt and the same voice it has in Chat. The backend only hands the browser a one-time token, and the audio goes over WebRTC between your browser and ElevenLabs. A session ends after a minute of silence, after ten minutes at most, or when you leave the room or switch to Chat.
 
-> [!TIP]
-> Voice mode is tested in desktop Chrome. Allow the microphone when the browser asks.
+Voice mode is tested in desktop Chrome. Allow the microphone when the browser asks.
 
 ## How it works
 
@@ -151,9 +116,11 @@ flowchart LR
   class char accent
 ```
 
-- **Talking and body language are separate.** The reply model only talks. The director (`/api/direct`) picks a gesture (usually none) and an expression for each line, so the body acts the same way in both modes.
-- **The stage** (`frontend/src/stage/`) renders the room with three.js and three-vrm: motions retargeted onto each VRM, feet kept on the floor, soft blends between motions and a camera framed for each screen size.
-- **The backend** (`backend/app/`) is a small FastAPI app for chat replies, streamed speech, voice session tokens and the director. Character personas live in `backend/app/prompts/character_prompt.py`.
+The reply model only talks. The director (`/api/direct`) reads the conversation so far and picks a gesture (usually none) and an expression for each line: a wave, a nod, a head shake, a shrug, or talking with the hands while the character explains something. The body acts the same way in both modes.
+
+The stage (`frontend/src/stage/`) renders the room with three.js and three-vrm from one fixed camera, framed for each screen size. Motion-capture idles, wave, shrug and talk motions are retargeted onto each VRM and blend softly into each other, with the feet kept on the floor, blinking, breathing and a slow shift of weight. Left alone, the characters idle, look at your pointer and now and then doze off.
+
+The backend (`backend/app/`) is a small FastAPI app for chat replies, streamed speech, voice session tokens and the director. Character personas live in `backend/app/prompts/character_prompt.py`.
 
 <details>
 <summary><b>Project layout</b></summary>
@@ -185,9 +152,9 @@ cd backend && .venv/bin/python -m pytest
 <details>
 <summary><b>Troubleshooting</b></summary>
 
-- **Voice is greyed out:** set `ELEVENLABS_API_KEY` and `ELEVENLABS_AGENT_ID` in `backend/.env` and restart the backend.
-- **"Could not reach the Anima server":** the backend is not running on port 8001.
-- **Microphone blocked:** allow it in the browser's site settings, then press the microphone again.
+- Voice is greyed out: set `ELEVENLABS_API_KEY` and `ELEVENLABS_AGENT_ID` in `backend/.env` and restart the backend.
+- "Could not reach the Anima server": the backend is not running on port 8001.
+- Microphone blocked: allow it in the browser's site settings, then press the microphone again.
 
 </details>
 

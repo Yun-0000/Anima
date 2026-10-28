@@ -11,11 +11,11 @@ from app.models.schemas import DirectRequest, DirectResponse, GestureType
 
 
 def test_gestures_the_director_can_choose():
-    assert get_args(GestureType) == ("none", "wave", "nod", "shake", "shrug")
+    assert get_args(GestureType) == ("none", "wave", "nod", "shake", "shrug", "explain")
 
 
 def test_direct_schemas_reject_unknown_values():
     with pytest.raises(ValidationError):
-        DirectResponse(gesture="backflip", emotion="neutral")
+        DirectResponse(directions=[{"gesture": "backflip", "emotion": "neutral"}])
     with pytest.raises(ValidationError):
-        DirectRequest(speaker="narrator", line="hi")
+        DirectRequest(speaker="narrator", lines=["hi"])

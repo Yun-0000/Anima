@@ -5,7 +5,7 @@ import App from './App'
 import type { CharacterOption } from './characters/catalog'
 
 const controls = vi.hoisted(() => ({
-  setEmotion: vi.fn(), playAnimation: vi.fn(), setActivity: vi.fn(), setAudioLevel: vi.fn(),
+  setEmotion: vi.fn(), playAnimation: vi.fn(), explain: vi.fn(), setActivity: vi.fn(), setAudioLevel: vi.fn(),
   startLipSync: vi.fn(), stopLipSync: vi.fn(), forceReturnToIdle: vi.fn(),
 }))
 const live = vi.hoisted(() => ({ connect: vi.fn(), close: vi.fn(() => Promise.resolve()) }))
@@ -33,7 +33,8 @@ function serve(voice: boolean) {
     const body = JSON.parse(String(init?.body))
     // The director relaxes the face at what the user says and waves at the character's greeting.
     if (url.startsWith('/api/direct')) {
-      return new Response(JSON.stringify(body.speaker === 'user' ? { gesture: 'none', emotion: 'relaxed' } : { gesture: 'wave', emotion: 'happy' }))
+      const direction = body.speaker === 'user' ? { gesture: 'none', emotion: 'relaxed' } : { gesture: 'wave', emotion: 'happy' }
+      return new Response(JSON.stringify({ directions: body.lines.map(() => direction) }))
     }
     return new Response(JSON.stringify({ text: `You said: ${body.message}`, audio_url: '', duration: 0 }))
   }))

@@ -2,13 +2,12 @@ export interface CharacterOption {
   id: string
   label: string
   tagline: string
-  /** First line on arrival, shown while the character waves. */
   greeting: string
   modelUrl: string
   preview: string
   /** Background tint on the characters page. */
   tint: string
-  /** How often the character picks each motion when left alone; higher is more often. */
+  /** Weights for what the character does when left alone. */
   preferences: Partial<Record<string, number>>
 }
 

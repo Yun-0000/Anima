@@ -34,13 +34,13 @@ export function StudioPage() {
     setMode(next)
     try { window.localStorage.setItem(MODE_KEY, next) } catch { /* private browsing: remember in memory only */ }
   }
-  // Without the ElevenLabs settings there is no voice; a remembered voice choice falls back to chat.
+  // Without ElevenLabs settings, a remembered voice choice falls back to chat.
   const activeMode: Mode = mode === 'voice' && voiceEnabled !== false ? 'voice' : 'chat'
 
   return (
     <div className="scene-page">
       {/* Zoomed in and lifted so the character stands above the conversation. */}
-      <StageView character={character} onReady={setControls} zoom={1.06} lift={0.12} />
+      <StageView character={character} onReady={setControls} zoom={1.06} lift={0.12} greet="smile" />
       <header className="overlay-bar">
         <Link to="/characters" className="back-button"><span aria-hidden="true">←</span>Characters</Link>
         <div className="mode-switch" role="group" aria-label="Conversation mode">

@@ -10,6 +10,7 @@ DEFAULT_CHARACTER_ID = "mio"
 class CharacterProfile:
     id: str
     name: str
+    persona: str
     system_prompt: str
     voice_prompt: str
     # The character's ElevenLabs voice in both modes; ELEVENLABS_VOICE_ID_<ID> overrides it.
@@ -17,7 +18,7 @@ class CharacterProfile:
 
 
 def _profile(id: str, name: str, persona: str, eleven_voice: str) -> CharacterProfile:
-    return CharacterProfile(id=id, name=name, system_prompt=text_prompt(persona), voice_prompt=voice_prompt(persona), eleven_voice=eleven_voice)
+    return CharacterProfile(id=id, name=name, persona=persona, system_prompt=text_prompt(persona), voice_prompt=voice_prompt(persona), eleven_voice=eleven_voice)
 
 
 CHARACTER_PROFILES = {

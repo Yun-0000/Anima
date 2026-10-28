@@ -10,8 +10,8 @@ director: DirectorService | None = None
 
 @router.post("/direct", response_model=DirectResponse, dependencies=[Depends(limit("direct", 200, 600))])
 async def direct_line(payload: DirectRequest):
-    """Gesture and expression for one line of the conversation, said by the character or by the user."""
+    """Gesture and expression for each line of the character or the user, given the conversation before it."""
     global director
     if director is None:
         director = DirectorService()
-    return await director.direct(payload.character_id, payload.speaker, payload.line, payload.previous)
+    return await director.direct(payload.character_id, payload.speaker, payload.lines, payload.context)

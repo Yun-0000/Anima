@@ -12,15 +12,12 @@ export const initialSnapshot: VoiceSnapshot = { connected: false, connecting: fa
 /** Replies may carry delivery tags for the voice, such as "[happy]"; they are not words to show. */
 export const spoken = (text: string) => text.replace(/\[[^\]]*\]\s*/g, '').trim()
 
-/**
- * Voice mode: a conversation with the ElevenLabs voice agent over WebRTC. The agent hears the user,
- * answers with the character's prompt, and speaks in the same voice as the character's text replies.
- */
+/** Voice mode: the ElevenLabs agent over WebRTC, with the character's prompt and the same voice as in chat. */
 export class LiveClient {
   snapshot: VoiceSnapshot = initialSnapshot
   onChange: (snapshot: VoiceSnapshot) => void = () => {}
   onActivity: (activity: Activity) => void = () => {}
-  /** A finished line of the conversation: a reply of the character, or what the user said. */
+  /** A finished line, the character's or the user's. */
   onLine: (speaker: Speaker, line: string) => void = () => {}
   onAudio: (level: number) => void = () => {}
   private conversation?: VoiceConversation
@@ -66,7 +63,6 @@ export class LiveClient {
       })
       if (abort.signal.aborted) { await conversation.endSession(); return }
       this.conversation = conversation
-      // The character's voice moves the mouth.
       this.every(50, () => this.onAudio(this.speaking ? Math.min(1, conversation.getOutputVolume() * 1.6) : 0))
       this.every(1000, () => { if (Date.now() - this.lastActive > IDLE_MS) void this.close('Voice ended after a minute of quiet') })
     } catch (error) {

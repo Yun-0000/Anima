@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import type { VRM, VRMHumanBoneName } from '@pixiv/three-vrm'
 
-// Meshy auto-rig skeleton (Mixamo-like, no fingers). Note the spine order: Spine02 is the lowest.
+// Meshy auto-rig skeleton (Mixamo-like, no fingers). Spine02 is the lowest.
 const meshyVRMRigMap: Record<string, VRMHumanBoneName> = {
   Hips: 'hips',
   Spine02: 'spine',
@@ -38,7 +38,6 @@ const textMotionRigMap: Record<string, VRMHumanBoneName> = {
 }
 // Generated finger motion comes out clawed or fisted, so fingers are posed here instead: each joint curls toward
 // the palm (normalized VRM bones: arms along ±X, palms facing -Y), the thumb less than the others.
-// A relaxed hand curls gently; a soft hand (gesturing while talking) less; an open hand (waving) is nearly flat.
 const RELAXED = { Proximal: 0.35, Intermediate: 0.45, Distal: 0.3 }
 const SOFT = { Proximal: 0.15, Intermediate: 0.2, Distal: 0.12 }
 const OPEN = { Proximal: 0.06, Intermediate: 0.08, Distal: 0.05 }

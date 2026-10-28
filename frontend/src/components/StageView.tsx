@@ -7,12 +7,11 @@ import type { EmotionName } from '../types/expression'
 
 export interface CharacterControls {
   setEmotion: (emotion: EmotionName) => void
-  /** A gesture the director chose. */
   playAnimation: (gesture: DirectedGesture) => void
+  explain: () => void
   setActivity: (activity: Activity) => void
-  /** Drives the mouth from the character's own voice (0–1). */
+  /** 0 to 1, from the character's voice. */
   setAudioLevel: (level: number) => void
-  /** Moves the mouth with an audio element's loudness and keeps the character facing the user meanwhile. */
   startLipSync: (audio: HTMLAudioElement) => void
   stopLipSync: () => void
   forceReturnToIdle: () => void
@@ -27,17 +26,18 @@ interface StageViewProps {
   lift?: number
   /** Idle with this one version instead of rotating between them. */
   idle?: string
-  /** Just the character and its shadow over the page, without the room. */
+  /** Without the room. */
   bare?: boolean
-  /** Wave hello when the character appears; without it (the gallery) the character also stays awake, never dozing. */
-  greet?: boolean
-  /** Longer rests between idles (home and gallery: 3-6 s); the studio rests only 1-2.5 s, so it looks livelier. */
+  /** On arrival. A room smiles instead of waving, as the conversation's hello would repeat a wave. */
+  greet?: 'wave' | 'smile'
+  awake?: boolean
+  /** Rest 3-6 s between idles instead of 1-2.5 s. */
   rests?: boolean
 }
 
-/** A happy wave on arrival, and a small reaction when the character is clicked. */
-function react(stage: Stage, action: 'wave' | 'nod' = 'wave') {
-  stage.setEmotion('happy'); stage.play(action)
+function react(stage: Stage, action: 'wave' | 'nod' | 'smile' = 'wave') {
+  stage.setEmotion('happy')
+  if (action !== 'smile') stage.play(action)
   setTimeout(() => stage.setEmotion('neutral'), 2600)
 }
 
@@ -47,6 +47,7 @@ function controlsFor(stage: Stage): CharacterControls {
   return {
     setEmotion: (emotion) => stage.setEmotion(emotion),
     playAnimation: (gesture) => stage.play(gesture),
+    explain: () => stage.explain(),
     setActivity: (activity) => stage.setActivity(activity),
     setAudioLevel: (level) => { stage.audioLevel = level },
     startLipSync: (audio) => {
@@ -69,12 +70,12 @@ function controlsFor(stage: Stage): CharacterControls {
   }
 }
 
-/** A character in its room. The stage lives as long as this component; switching characters reloads only the model. */
-export function StageView({ character, onReady, className = '', zoom = 1, lift = 0, idle = '', bare = false, greet = true, rests = false }: StageViewProps) {
+/** The stage lives as long as this component; switching characters reloads only the model. */
+export function StageView({ character, onReady, className = '', zoom = 1, lift = 0, idle = '', bare = false, greet, awake = false, rests = false }: StageViewProps) {
   const host = useRef<HTMLDivElement>(null)
   const stage = useRef<Stage | null>(null)
   const ready = useRef(onReady)
-  // Which character is on stage (or failed): a new character shows the loading overlay until its model is ready.
+  // A new character shows the loading overlay until its model is ready.
   const [loadedId, setLoadedId] = useState<string | null>(null)
   const [failedId, setFailedId] = useState<string | null>(null)
   const loaded = loadedId === character.id
@@ -98,12 +99,12 @@ export function StageView({ character, onReady, className = '', zoom = 1, lift =
   useEffect(() => {
     const current = stage.current!
     let active = true
-    current.load(character.modelUrl, greet ? character.preferences : { ...character.preferences, doze: 0 })
+    current.load(character.modelUrl, awake ? { ...character.preferences, doze: 0 } : character.preferences)
       .then((shown) => {
         if (!active || !shown) return
         setLoadedId(character.id)
         if (current.motion) { current.motion.idleFile = idle; current.motion.rest = rests ? [3, 6] : [1, 2.5] }
-        if (greet) react(current)
+        if (greet) react(current, greet)
         ready.current?.(controlsFor(current))
       })
       .catch((error) => {
@@ -111,7 +112,7 @@ export function StageView({ character, onReady, className = '', zoom = 1, lift =
         if (active) setFailedId(character.id)
       })
     return () => { active = false }
-  }, [character, idle, greet, rests])
+  }, [character, idle, greet, awake, rests])
 
   const onClick = (event: React.MouseEvent) => {
     const current = stage.current

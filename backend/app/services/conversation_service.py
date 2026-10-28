@@ -26,8 +26,6 @@ def scripted_reply(text: str, name: str) -> str:
 
 
 class ConversationService:
-    """Chat: the character's reply, and a URL that streams it as speech."""
-
     def __init__(self):
         self.llm = LLMService() if os.getenv("OPENAI_API_KEY") else None
         self.tts = TTSService() if os.getenv("ELEVENLABS_API_KEY") else None

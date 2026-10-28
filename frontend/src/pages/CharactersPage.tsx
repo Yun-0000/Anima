@@ -4,10 +4,9 @@ import { CHARACTER_OPTIONS } from '../characters/catalog'
 import { StageView } from '../components/StageView'
 import { ensureBrowserAudioUnlocked } from '../utils/audioPlaybackUnlock'
 
-/** One scale for everyone, so their heights compare: Kai, the tallest, stands from about 10% to 92% of the page. */
+/** One scale for everyone, so their heights compare. */
 const FIGURE = { zoom: 1.62, lift: 0.1 }
 
-/** One character at a time, large, with their name, a line of theirs and the others as thumbnails below. */
 export function CharactersPage() {
   const navigate = useNavigate()
   const [index, setIndex] = useState(0)
@@ -24,9 +23,9 @@ export function CharactersPage() {
     return () => window.removeEventListener('keydown', onKey)
   })
 
-  const enter = async () => {
-    // Unlocking audio inside the click lets the first spoken reply play without another tap.
-    await ensureBrowserAudioUnlocked()
+  const enter = () => {
+    // Unlocks audio inside the click so the first reply can play; not awaited, as Safari can leave it pending.
+    void ensureBrowserAudioUnlocked()
     navigate(`/studio/${character.id}`)
   }
 
@@ -36,9 +35,8 @@ export function CharactersPage() {
         <Link to="/" className="back-button"><span aria-hidden="true">←</span>Home</Link>
       </header>
 
-      {/* The character fills the page, live: it drifts between idle poses (the wave is saved for its room); click it and it reacts. */}
       <div className="feature__figure">
-        <StageView character={character} bare greet={false} rests zoom={FIGURE.zoom} lift={FIGURE.lift} />
+        <StageView character={character} bare awake rests zoom={FIGURE.zoom} lift={FIGURE.lift} />
       </div>
 
       <main className="feature">
@@ -47,7 +45,7 @@ export function CharactersPage() {
           <h1 className="feature__name">{character.label}</h1>
           <p className="feature__quote">“{character.greeting}”</p>
           <p className="feature__tagline">{character.tagline}</p>
-          <button type="button" className="button primary" onClick={() => void enter()}>
+          <button type="button" className="button primary" onClick={enter}>
             Enter {character.label}’s room <span aria-hidden="true">→</span>
           </button>
         </div>

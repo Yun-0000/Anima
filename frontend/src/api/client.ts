@@ -3,7 +3,6 @@ import type { EmotionName } from '../types/expression'
 /** The backend's address; empty when the dev server proxies /api. */
 export const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL ?? '').replace(/\/$/, '')
 
-/** Backend paths such as /api/speech/... point at the backend; other URLs stay as they are. */
 export function resolveApiAssetUrl(assetUrl: string) {
   return assetUrl.startsWith('/') ? `${apiBaseUrl}${assetUrl}` : assetUrl
 }
@@ -59,20 +58,22 @@ export async function fetchInteractionConfig(): Promise<InteractionConfig> {
 }
 
 export type Speaker = 'character' | 'user'
+export type Line = { speaker: Speaker; text: string }
 
 export interface Direction {
-  gesture: 'none' | DirectedGesture
+  /** "explain" talks with the hands for the rest of the reply. */
+  gesture: 'none' | 'explain' | DirectedGesture
   emotion: EmotionName
 }
 export type DirectedGesture = 'wave' | 'nod' | 'shake' | 'shrug'
 
-/** Gesture and expression for one line of the conversation. */
-export async function directLine(characterId: string, speaker: Speaker, line: string, previous = ''): Promise<Direction> {
+/** `context` is the conversation before `lines`, oldest first. */
+export async function directLines(characterId: string, speaker: Speaker, lines: string[], context: Line[]): Promise<Direction[]> {
   const response = await fetch(`${apiBaseUrl}/api/direct`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ character_id: characterId, speaker, line, previous }),
+    body: JSON.stringify({ character_id: characterId, speaker, lines, context }),
   })
   await requireOk(response, 'Director')
-  return response.json()
+  return (await response.json()).directions
 }
