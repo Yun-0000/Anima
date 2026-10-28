@@ -118,7 +118,7 @@ flowchart LR
 
 The reply model only talks. The director (`/api/direct`) reads the conversation so far and picks a gesture (usually none) and an expression for each line: a wave, a nod, a head shake, a shrug, or talking with the hands while the character explains something. The body acts the same way in both modes.
 
-The stage (`frontend/src/stage/`) renders the room with three.js and three-vrm from one fixed camera, framed for each screen size. Motion-capture idles, wave, shrug and talk motions are retargeted onto each VRM and blend softly into each other, with the feet kept on the floor, blinking, breathing and a slow shift of weight. Left alone, the characters idle, look at your pointer and now and then doze off.
+The stage (`frontend/src/stage/`) renders the room with three.js and three-vrm from one fixed camera, framed for each screen size. Motion-capture idles, wave, shrug and explain motions are retargeted onto each VRM and blend softly into each other, with the feet kept on the floor, blinking, breathing and a slow shift of weight. Left alone, the characters idle, look at your pointer and now and then doze off.
 
 The backend (`backend/app/`) is a small FastAPI app for chat replies, streamed speech, voice session tokens and the director. Character personas live in `backend/app/prompts/character_prompt.py`.
 

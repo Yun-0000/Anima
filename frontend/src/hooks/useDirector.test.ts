@@ -9,10 +9,10 @@ it('splits replies into sentences, Latin and Chinese', () => {
 
 it('directs a whole reply at once, knowing the conversation, and plays each sentence\'s direction as it is said', async () => {
   vi.useFakeTimers()
-  const answers = [[{ gesture: 'none', emotion: 'neutral' }], [{ gesture: 'wave', emotion: 'happy' }, { gesture: 'explain', emotion: 'relaxed' }]]
+  const answers = [[{ gesture: 'none', emotion: 'neutral' }], [{ gesture: 'none', emotion: 'happy' }, { gesture: 'explain', emotion: 'relaxed' }]]
   const fetchMock = vi.fn(async () => new Response(JSON.stringify({ directions: answers.shift() })))
   vi.stubGlobal('fetch', fetchMock)
-  const controls = { setEmotion: vi.fn(), playAnimation: vi.fn(), explain: vi.fn() } as never
+  const controls = { setEmotion: vi.fn(), playAnimation: vi.fn() } as never
   const { result } = renderHook(() => useDirector(controls, 'mio'))
   await act(async () => { await result.current.direct('user', 'Hi Mio!') })
   await act(async () => { await result.current.directReply('Hello there! Let me tell you how tea is made.'); await vi.advanceTimersByTimeAsync(0) })
@@ -23,11 +23,11 @@ it('directs a whole reply at once, knowing the conversation, and plays each sent
     lines: ['Hello there!', 'Let me tell you how tea is made.'],
     context: [{ speaker: 'user', text: 'Hi Mio!' }],
   })
-  const c = controls as unknown as { setEmotion: ReturnType<typeof vi.fn>; playAnimation: ReturnType<typeof vi.fn>; explain: ReturnType<typeof vi.fn> }
-  expect(c.playAnimation).toHaveBeenCalledExactlyOnceWith('wave')
-  expect(c.explain).not.toHaveBeenCalled()
+  const c = controls as unknown as { setEmotion: ReturnType<typeof vi.fn>; playAnimation: ReturnType<typeof vi.fn> }
+  expect(c.playAnimation).not.toHaveBeenCalled()
+  // The second sentence's gesture comes when it is said.
   await act(async () => { await vi.advanceTimersByTimeAsync(3000) })
-  expect(c.explain).toHaveBeenCalledOnce()
+  expect(c.playAnimation).toHaveBeenCalledExactlyOnceWith('explain')
   expect(c.setEmotion.mock.calls.map(call => call[0])).toEqual(['neutral', 'happy', 'relaxed'])
   // The face relaxes back to neutral after a while.
   await act(async () => { await vi.advanceTimersByTimeAsync(7000) })

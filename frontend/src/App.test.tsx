@@ -5,7 +5,7 @@ import App from './App'
 import type { CharacterOption } from './characters/catalog'
 
 const controls = vi.hoisted(() => ({
-  setEmotion: vi.fn(), playAnimation: vi.fn(), explain: vi.fn(), setActivity: vi.fn(), setAudioLevel: vi.fn(),
+  setEmotion: vi.fn(), playAnimation: vi.fn(), setActivity: vi.fn(), setAudioLevel: vi.fn(),
   startLipSync: vi.fn(), stopLipSync: vi.fn(), forceReturnToIdle: vi.fn(),
 }))
 const live = vi.hoisted(() => ({ connect: vi.fn(), close: vi.fn(() => Promise.resolve()) }))

@@ -17,9 +17,8 @@ answers), lines (a line of the user, or the sentences of one reply), context (th
 
 Most of the time the body needs no gesture: it stands and idles while listening and while speaking, which already looks
 alive. Add a gesture only when the moment calls for it, the way a person would: a wave to greet or say goodbye, a nod to
-agree or acknowledge, a head shake for "no", a shrug for not knowing, or "explain" to talk with the hands from a
-sentence that explains something to the end of the reply. The same gesture line after line looks robotic. The face
-shows the feeling of the moment.
+agree or acknowledge, a head shake for "no", a shrug for not knowing, or "explain" to gesture with the hands while
+explaining something. The same gesture line after line looks robotic. The face shows the feeling of the moment.
 Return one direction per line, in order:
 {"directions": [{"gesture": "none|wave|nod|shake|shrug|explain", "emotion": "neutral|relaxed|happy|sad|surprised|angry|wink"}]}"""
 

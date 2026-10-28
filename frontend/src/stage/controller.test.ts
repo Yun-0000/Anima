@@ -57,21 +57,6 @@ it('speaks standing, going on through the idle versions', async () => {
   expect(controller.file).not.toBe(first)
   controller.dispose()
 })
-it('talks with its hands once it explains, and stops after a real silence', async () => {
-  const { controller } = setup()
-  controller.autonomous = false
-  await controller.play('idle')
-  controller.setActivity('speaking'); controller.explain(); controller.update(0); await settle()
-  expect(controller.current).toBe('talk')
-  controller.setActivity('idle'); controller.update(0.5); await settle()
-  expect(controller.current).toBe('talk')
-  controller.update(1); await settle()
-  expect(controller.current).toBe('idle')
-  // The next reply starts standing again.
-  controller.setActivity('speaking'); await settle()
-  expect(controller.current).toBe('idle')
-  controller.dispose()
-})
 it('a gesture at the end of speech is not held: an idle follows, awake', async () => {
   const { controller } = setup()
   controller.preferences = only('doze')
@@ -83,14 +68,6 @@ it('a gesture at the end of speech is not held: an idle follows, awake', async (
   controller.update(1.1); await settle()
   expect(controller.current).toBe('idle')
   expect(controller.dozing).toBe(false)
-  controller.dispose()
-})
-it('talk played on purpose keeps looping in silence', async () => {
-  const { controller } = setup()
-  controller.autonomous = false
-  await controller.play('talk')
-  controller.update(5); await settle()
-  expect(controller.current).toBe('talk')
   controller.dispose()
 })
 it('left alone, it switches between the idle versions instead of repeating one', async () => {

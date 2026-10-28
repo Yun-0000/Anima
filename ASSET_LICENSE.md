@@ -6,7 +6,7 @@ The three characters are VRoid Project's sample avatars AvatarSample_A (Mio), Av
 
 ## Motions
 
-`frontend/public/motions/` holds 6 motions from Meshy's animation library (motion capture), bundled so the app moves without extra downloads. They were exported through the Meshy API onto a Meshy-rigged character and are named after their library number: idles #243, #249 and #252, wave #290 ("Wave One Hand"), talk #314 ("Talk with Right Hand Open") and shrug #317 ("Shrug"). Finger poses are set in code. No Mixamo animations are used.
+`frontend/public/motions/` holds 6 motions from Meshy's animation library (motion capture), bundled so the app moves without extra downloads. They were exported through the Meshy API onto a Meshy-rigged character and are named after their library number: idles #243, #249 and #252, wave #290 ("Wave One Hand"), explain #314 ("Talk with Right Hand Open") and shrug #317 ("Shrug"). Finger poses are set in code. No Mixamo animations are used.
 
 Nodding and head shaking are procedural (code), not animation files.
 

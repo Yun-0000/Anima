@@ -20,15 +20,11 @@ export class MotionController {
   idleFile = ''
   /** Seconds to hold still after each idle, picked at random in this range. */
   rest: readonly [number, number] = [1, 2.5]
-  private looping = true
   private clips = new Map<string, Promise<THREE.AnimationClip>>()
   private action?: THREE.AnimationAction
   private generation = 0
   private dwell = 0
   private quiet = Infinity
-  /** The talk motion was started by the character speaking (not played on purpose), so silence ends it. */
-  private voiceTalk = false
-  private explaining = false
   private disposed = false
   preferences: Partial<Record<Choice, number>> = {}
   dozing = false
@@ -44,7 +40,7 @@ export class MotionController {
     const bottom = new THREE.Box3().setFromObject(vrm.scene).min.y
     if (ankle !== undefined && Number.isFinite(bottom)) this.sole = Math.max(0, ankle - bottom)
   }
-  async play(name: MotionName, intent: { dwell?: number; dozing?: boolean; file?: string; voice?: boolean } = {}) {
+  async play(name: MotionName, intent: { dwell?: number; dozing?: boolean; file?: string } = {}) {
     this.dozing = false
     const [file, clip] = this.clip(name, intent.file)
     // Idles play once and rest; a version chosen in the lab loops so it can be watched.
@@ -55,7 +51,7 @@ export class MotionController {
     this.dozing = false
     return this.start('custom', loadMeshyAnimation(url, this.vrm), loop, { dwell: Infinity }, url)
   }
-  private async start(name: MotionName | 'custom', clip: Promise<THREE.AnimationClip>, loop: boolean, intent: { dwell?: number; dozing?: boolean; voice?: boolean; once?: boolean }, file: string) {
+  private async start(name: MotionName | 'custom', clip: Promise<THREE.AnimationClip>, loop: boolean, intent: { dwell?: number; dozing?: boolean; once?: boolean }, file: string) {
     const generation = ++this.generation
     try {
       const resolved = await clip
@@ -73,8 +69,6 @@ export class MotionController {
       this.action = next
       this.current = name
       this.file = file
-      this.looping = loop
-      this.voiceTalk = intent.voice === true
       const rest = this.rest[0] + Math.random() * (this.rest[1] - this.rest[0])
       this.dwell = intent.once ? Math.max(intent.dwell ?? 0, resolved.duration + rest) : intent.dwell ?? (loop ? 8 + Math.random() * 15 : resolved.duration)
     } catch (error) {
@@ -103,9 +97,6 @@ export class MotionController {
     const alone = this.activity === 'idle'
     this.activity = activity
     if (activity !== 'idle') this.dozing = false
-    // Talking interrupts a looping motion (to face the user) but lets a gesture such as a wave finish.
-    const target = this.conversing()
-    if (activity !== 'idle' && this.current !== target && this.looping) void this.play(target, { voice: true })
     // In conversation the next idle comes after a short rest, not the long one of being alone.
     if (alone && activity !== 'idle' && this.current === 'idle' && this.action) {
       const left = Math.max(0, this.action.getClip().duration - this.action.time)
@@ -114,20 +105,9 @@ export class MotionController {
     // Stay with the user a while in an idle; a gesture's last pose, such as a shrug's open arms, is not held.
     if (activity === 'idle' && this.current === 'idle') this.dwell = Math.max(this.dwell, 15)
   }
-  /** The character starts explaining something: it talks with its hands for the rest of what it says. */
-  explain() {
-    if (this.activity !== 'speaking') return
-    this.explaining = true
-    if (this.current !== 'talk' && this.looping) void this.play('talk', { voice: true })
-  }
-  private conversing(): MotionName { return this.activity === 'speaking' && this.explaining ? 'talk' : 'idle' }
   update(dt: number) {
     this.mixer.update(dt)
-    // Voice pauses between sentences; stop talking with the hands only after a real silence.
     this.quiet = this.activity === 'speaking' ? 0 : this.quiet + dt
-    if (this.quiet > 1.2) this.explaining = false
-    // After talking, stay with the user for a while before idling on, unless they already talk back.
-    if (this.current === 'talk' && this.voiceTalk && this.quiet > 1.2) void this.play('idle', this.activity === 'idle' ? { dwell: 15 } : {})
     this.dwell -= dt
     if (this.autonomous && this.activity === 'idle' && this.dwell <= 0) {
       // After dozing, wake up (idle) before doing anything else; just after talking, stay awake.
@@ -139,9 +119,10 @@ export class MotionController {
       this.dwell = 12
       void this.play('idle', name === 'doze' ? { dwell: 20, dozing: true } : {})
     }
-    if (this.activity !== 'idle' && this.dwell <= 0 && (!this.looping || this.current === 'idle')) {
+    // In conversation, after an idle and its rest or after a gesture, the next idle.
+    if (this.activity !== 'idle' && this.dwell <= 0) {
       this.dwell = 12
-      void this.play(this.conversing(), { voice: true })
+      void this.play('idle')
     }
   }
   /** Keep the lower sole on the floor. */

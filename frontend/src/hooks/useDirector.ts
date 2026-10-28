@@ -32,8 +32,7 @@ export function useDirector(controls: CharacterControls | null, characterId: str
     if (!target) return
     const now = performance.now()
     const tooSoon = now - lastGesture.current < GESTURE_GAP_MS || (direction.gesture === 'wave' && now - lastWave.current < WAVE_AGAIN_MS)
-    if (direction.gesture === 'explain') target.explain()
-    else if (direction.gesture !== 'none' && !tooSoon) {
+    if (direction.gesture !== 'none' && !tooSoon) {
       target.playAnimation(direction.gesture)
       lastGesture.current = now
       if (direction.gesture === 'wave') lastWave.current = now

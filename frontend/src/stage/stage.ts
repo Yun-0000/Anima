@@ -139,7 +139,6 @@ export class Stage {
     else void this.motion?.play(action as MotionName)
     this.resume()
   }
-  explain() { this.motion?.explain(); this.resume() }
   /** Emotions blend in and out over a few frames instead of snapping. */
   setEmotion(emotion: EmotionName) {
     if (emotion === 'wink') { this.wink(); return }

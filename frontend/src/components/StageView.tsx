@@ -8,7 +8,6 @@ import type { EmotionName } from '../types/expression'
 export interface CharacterControls {
   setEmotion: (emotion: EmotionName) => void
   playAnimation: (gesture: DirectedGesture) => void
-  explain: () => void
   setActivity: (activity: Activity) => void
   /** 0 to 1, from the character's voice. */
   setAudioLevel: (level: number) => void
@@ -47,7 +46,6 @@ function controlsFor(stage: Stage): CharacterControls {
   return {
     setEmotion: (emotion) => stage.setEmotion(emotion),
     playAnimation: (gesture) => stage.play(gesture),
-    explain: () => stage.explain(),
     setActivity: (activity) => stage.setActivity(activity),
     setAudioLevel: (level) => { stage.audioLevel = level },
     startLipSync: (audio) => {

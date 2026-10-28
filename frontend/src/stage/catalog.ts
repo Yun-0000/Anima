@@ -3,8 +3,7 @@ export const motions = {
   idle: { files: ['idle_243', 'idle_249', 'idle_252'], loop: true },
   wave: { files: ['wave_290'], loop: false, hands: { all: { left: 'relaxed', right: 'open' } } },
   shrug: { files: ['shrug_317'], loop: false, hands: { all: { left: 'open', right: 'open' } } },
-  // Only while the character explains something.
-  talk: { files: ['talk_314'], loop: true, hands: { all: { left: 'soft', right: 'soft' } } },
+  explain: { files: ['explain_314'], loop: false, hands: { all: { left: 'soft', right: 'soft' } } },
 } as const
 export type MotionName = keyof typeof motions
 /** Procedural, on top of whatever the body is doing. */

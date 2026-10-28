@@ -61,11 +61,10 @@ export type Speaker = 'character' | 'user'
 export type Line = { speaker: Speaker; text: string }
 
 export interface Direction {
-  /** "explain" talks with the hands for the rest of the reply. */
-  gesture: 'none' | 'explain' | DirectedGesture
+  gesture: 'none' | DirectedGesture
   emotion: EmotionName
 }
-export type DirectedGesture = 'wave' | 'nod' | 'shake' | 'shrug'
+export type DirectedGesture = 'wave' | 'nod' | 'shake' | 'shrug' | 'explain'
 
 /** `context` is the conversation before `lines`, oldest first. */
 export async function directLines(characterId: string, speaker: Speaker, lines: string[], context: Line[]): Promise<Direction[]> {

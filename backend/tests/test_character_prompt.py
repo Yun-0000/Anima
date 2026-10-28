@@ -15,5 +15,5 @@ def test_every_character_has_text_and_voice_prompts_with_its_name():
         # Voice replies are spoken as they are; only chat replies are JSON.
         assert "JSON" not in profile.voice_prompt
         # Both know what the body can do, so they neither refuse nor promise other moves.
-        assert "waves, nods, shakes its head and shrugs" in profile.system_prompt
-        assert "waves, nods, shakes its head and shrugs" in profile.voice_prompt
+        for prompt in (profile.system_prompt, profile.voice_prompt):
+            assert "waves, nods, shakes its head, shrugs" in prompt and "gestures with its hands" in prompt

@@ -2,7 +2,7 @@ from pydantic import BaseModel, Field
 from typing import Annotated, Literal
 
 EmotionType = Literal["neutral", "happy", "sad", "surprised", "angry", "relaxed", "wink"]
-# Gestures the director can choose; "none" leaves the body as it is, "explain" talks with the hands.
+# Gestures the director can choose; "none" leaves the body as it is.
 GestureType = Literal["none", "wave", "nod", "shake", "shrug", "explain"]
 
 
