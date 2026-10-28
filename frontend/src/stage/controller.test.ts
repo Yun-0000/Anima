@@ -61,7 +61,7 @@ it('talks with its hands once it explains, and stops after a real silence', asyn
   const { controller } = setup()
   controller.autonomous = false
   await controller.play('idle')
-  controller.setActivity('speaking'); controller.explain(); await settle()
+  controller.setActivity('speaking'); controller.explain(); controller.update(0); await settle()
   expect(controller.current).toBe('talk')
   controller.setActivity('idle'); controller.update(0.5); await settle()
   expect(controller.current).toBe('talk')
@@ -70,6 +70,19 @@ it('talks with its hands once it explains, and stops after a real silence', asyn
   // The next reply starts standing again.
   controller.setActivity('speaking'); await settle()
   expect(controller.current).toBe('idle')
+  controller.dispose()
+})
+it('a gesture at the end of speech is not held: an idle follows, awake', async () => {
+  const { controller } = setup()
+  controller.preferences = only('doze')
+  await controller.play('idle')
+  controller.setActivity('speaking'); controller.update(0)
+  await controller.play('shrug')
+  controller.setActivity('idle')
+  // The one-second test shrug ends; its last pose used to hold for 15 s.
+  controller.update(1.1); await settle()
+  expect(controller.current).toBe('idle')
+  expect(controller.dozing).toBe(false)
   controller.dispose()
 })
 it('talk played on purpose keeps looping in silence', async () => {

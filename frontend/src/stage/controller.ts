@@ -25,7 +25,7 @@ export class MotionController {
   private action?: THREE.AnimationAction
   private generation = 0
   private dwell = 0
-  private quiet = 0
+  private quiet = Infinity
   /** The talk motion was started by the character speaking (not played on purpose), so silence ends it. */
   private voiceTalk = false
   private explaining = false
@@ -111,7 +111,8 @@ export class MotionController {
       const left = Math.max(0, this.action.getClip().duration - this.action.time)
       this.dwell = Math.min(this.dwell, left + this.rest[1])
     }
-    if (activity === 'idle') this.dwell = Math.max(this.dwell, 15)
+    // Stay with the user a while in an idle; a gesture's last pose, such as a shrug's open arms, is not held.
+    if (activity === 'idle' && this.current === 'idle') this.dwell = Math.max(this.dwell, 15)
   }
   /** The character starts explaining something: it talks with its hands for the rest of what it says. */
   explain() {
@@ -129,8 +130,8 @@ export class MotionController {
     if (this.current === 'talk' && this.voiceTalk && this.quiet > 1.2) void this.play('idle', this.activity === 'idle' ? { dwell: 15 } : {})
     this.dwell -= dt
     if (this.autonomous && this.activity === 'idle' && this.dwell <= 0) {
-      // After dozing, wake up (idle) before doing anything else.
-      const names: Choice[] = this.dozing ? ['idle'] : ['idle', 'doze']
+      // After dozing, wake up (idle) before doing anything else; just after talking, stay awake.
+      const names: Choice[] = this.dozing || this.quiet < 15 ? ['idle'] : ['idle', 'doze']
       const total = names.reduce((sum, name) => sum + (this.preferences[name] ?? 1), 0)
       let weight = Math.random() * total
       const name = names.find(name => (weight -= this.preferences[name] ?? 1) < 0) ?? 'idle'
