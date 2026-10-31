@@ -8,7 +8,7 @@ router = APIRouter(prefix="/api", tags=["direct"])
 director: DirectorService | None = None
 
 
-@router.post("/direct", response_model=DirectResponse, dependencies=[Depends(limit("direct", 200, 600))])
+@router.post("/direct", response_model=DirectResponse, dependencies=[Depends(limit("direct", 400, 600))])
 async def direct_line(payload: DirectRequest):
     """Gesture and expression for each line of the character or the user, given the conversation before it."""
     global director

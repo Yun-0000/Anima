@@ -29,7 +29,7 @@ def session_overrides(character_id: str) -> dict:
     return {"agent": {"prompt": {"prompt": character.voice_prompt}, "firstMessage": ""}, "tts": {"voiceId": voice_id(character)}}
 
 
-@router.post("/live/sessions", dependencies=[Depends(limit("voice", 6, 3600))])
+@router.post("/live/sessions", dependencies=[Depends(limit("voice", 10, 3600))])
 async def create_live_session(request: LiveRequest):
     """A one-time token for a WebRTC conversation with the voice agent; the API key stays on the server."""
     if not voice_configured():

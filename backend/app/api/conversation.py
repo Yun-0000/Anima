@@ -18,7 +18,7 @@ def service() -> ConversationService:
     return conversation_service
 
 
-@router.get("/speech/{token}", dependencies=[Depends(limit("speech", 60, 600))])
+@router.get("/speech/{token}", dependencies=[Depends(limit("speech", 150, 600))])
 async def speech(token: str):
     """Streams the spoken version of a reply, in the character's voice."""
     tts = service().tts
@@ -28,7 +28,7 @@ async def speech(token: str):
     return StreamingResponse(tts.stream(*entry), media_type="audio/mpeg")
 
 
-@router.post("/text-conversation", response_model=ConversationResponse, dependencies=[Depends(limit("chat", 40, 600))])
+@router.post("/text-conversation", response_model=ConversationResponse, dependencies=[Depends(limit("chat", 100, 600))])
 async def process_text_conversation(
     payload: TextConversationRequest,
     character_id: str = Query(DEFAULT_CHARACTER_ID),
