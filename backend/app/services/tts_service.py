@@ -3,6 +3,7 @@ import hashlib
 import hmac
 import json
 import os
+import sys
 from typing import AsyncIterator, Optional
 
 import httpx
@@ -45,9 +46,9 @@ class TTSService:
                     json={"text": text, "model_id": self.model},
                 ) as response:
                     if response.status_code != 200:
-                        print(f"[TTS] ElevenLabs answered {response.status_code}")
+                        print(f"[TTS] ElevenLabs answered {response.status_code}", file=sys.stderr)
                         return
                     async for chunk in response.aiter_bytes():
                         yield chunk
         except httpx.HTTPError as exc:
-            print(f"[TTS] Error: {type(exc).__name__}: {exc}")
+            print(f"[TTS] Error: {type(exc).__name__}: {exc}", file=sys.stderr)

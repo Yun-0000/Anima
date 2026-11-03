@@ -1,4 +1,3 @@
-import json
 import os
 import re
 from typing import Optional
@@ -17,17 +16,17 @@ def speech_seconds(text: str) -> float:
 
 
 def scripted_reply(text: str, name: str) -> str:
-    """A few canned lines, so the app can be tried without an OpenAI key."""
+    """A few canned lines, so the app can be tried without a DeepSeek key."""
     if re.search(r"\b(hi|hello|hey|wave)\b", text, re.I):
         return f"Hi! It's {name}. Nice to see you."
     if "?" in text:
-        return "Hmm, I'm not sure. Without an OpenAI key I can only say a few things."
+        return "Hmm, I'm not sure. Without a DeepSeek key I can only say a few things."
     return f"Yes, I heard you: {text}"
 
 
 class ConversationService:
     def __init__(self):
-        self.llm = LLMService() if os.getenv("OPENAI_API_KEY") else None
+        self.llm = LLMService() if os.getenv("DEEPSEEK_API_KEY") else None
         self.tts = TTSService() if os.getenv("ELEVENLABS_API_KEY") else None
 
     async def process_text(self, user_text: str, character_id: str = DEFAULT_CHARACTER_ID, history: list[ChatTurn] = ()) -> Optional[ConversationResponse]:
@@ -37,12 +36,7 @@ class ConversationService:
         if self.llm is None:
             return ConversationResponse(text=scripted_reply(text, character.name), audio_url="", duration=0)
 
-        # Earlier replies go back as the JSON the model wrote, so it keeps answering in that format.
-        earlier = [
-            {"role": turn.role, "content": json.dumps({"text": turn.content}, ensure_ascii=False) if turn.role == "assistant" else turn.content}
-            for turn in history
-        ]
-        reply = await self.llm.reply(text, character.system_prompt, earlier)
+        reply = await self.llm.reply(text, character.system_prompt, [turn.model_dump() for turn in history])
         if reply is None:
             return None
         if self.tts is None:

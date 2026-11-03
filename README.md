@@ -66,7 +66,7 @@ npm install
 npm run dev
 ```
 
-Open http://127.0.0.1:4173, pick a character and say hi.
+Open http://localhost:4173, pick a character and say hi.
 
 ### Keys
 
@@ -75,7 +75,8 @@ Keys are your own and stay in `backend/.env`. The browser never sees them.
 | In `backend/.env` | Unlocks |
 | :--- | :--- |
 | *nothing* | Rooms, characters and motions, with scripted replies |
-| `OPENAI_API_KEY` | Real replies (`gpt-6-luna`) and the gesture director |
+| `DEEPSEEK_API_KEY` | Real replies (`deepseek-flash`) |
+| `OPENAI_API_KEY` | The gesture director (`gpt-6-luna`) |
 | `ELEVENLABS_API_KEY` | Each character's voice in Chat |
 | `ELEVENLABS_AGENT_ID` | Voice mode, see below |
 
@@ -99,7 +100,7 @@ Voice mode is tested in desktop Chrome. Allow the microphone when the browser as
 %%{init: {"theme": "base", "themeVariables": {"primaryColor": "#f6f1ea", "primaryBorderColor": "#2f5d48", "primaryTextColor": "#2b3330", "lineColor": "#8a9a90", "edgeLabelBackground": "#ffffff"}}}%%
 flowchart LR
   you([You])
-  chat["<b>Chat reply</b><br/>gpt-6-luna"]
+  chat["<b>Chat reply</b><br/>deepseek-flash"]
   agent["<b>Voice agent</b><br/>ElevenLabs<br/>deepseek-v41-flash"]
   voice["<b>Character voice</b><br/>Eleven v4 Turbo"]
   director["<b>Director</b><br/>gpt-6-luna"]
@@ -135,7 +136,7 @@ scripts/
   compress_vrm.py        shrinks a VRM without changing its look (needs numpy and Pillow)
 ```
 
-Open http://127.0.0.1:4173/lab to check characters, motions and expressions, or drop a `.vrm` or `.glb` file onto the page to try it. Motions are listed in `frontend/src/stage/catalog.ts` and characters in `frontend/src/characters/catalog.ts`.
+Open http://localhost:4173/lab to check characters, motions and expressions, or drop a `.vrm` or `.glb` file onto the page to try it. Motions are listed in `frontend/src/stage/catalog.ts` and characters in `frontend/src/characters/catalog.ts`.
 
 </details>
 

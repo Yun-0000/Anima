@@ -3,7 +3,7 @@ import { directLines, type Direction, type Line, type Speaker } from '../api/cli
 import type { CharacterControls } from '../components/StageView'
 
 /** A face returns to neutral this long after the director last gave it a feeling. */
-const EMOTION_MS = 6000
+const EMOTION_MS = 3000
 /** A gesture waits for the one before it to finish; a wave is not repeated (hello from both sides is one wave). */
 const GESTURE_GAP_MS = 1500
 const WAVE_AGAIN_MS = 6000
@@ -24,8 +24,11 @@ export function useDirector(controls: CharacterControls | null, characterId: str
   const timers = useRef(new Set<ReturnType<typeof setTimeout>>())
   const lastGesture = useRef(-Infinity)
   const lastWave = useRef(-Infinity)
+  /** Counts the user's lines, so a reply's late plan can tell it was cut off. */
+  const userLines = useRef(0)
   useEffect(() => { current.current = controls }, [controls])
-  useEffect(() => () => { clearTimeout(resetTimer.current); timers.current.forEach(clearTimeout) }, [])
+  // The stage outlives a room; the next character must not inherit this one's face.
+  useEffect(() => () => { clearTimeout(resetTimer.current); timers.current.forEach(clearTimeout); current.current?.setEmotion('neutral') }, [])
 
   const perform = useCallback((direction: Direction) => {
     const target = current.current
@@ -45,6 +48,8 @@ export function useDirector(controls: CharacterControls | null, characterId: str
   const plan = useCallback((speaker: Speaker, text: string, lines = [text]) => {
     const context = transcript.current.slice(-CONTEXT_LINES)
     transcript.current = [...context, { speaker, text }]
+    // The user talking again ends the reply; what it had left to act out is dropped.
+    if (speaker === 'user') { userLines.current += 1; timers.current.forEach(clearTimeout); timers.current.clear() }
     return directLines(characterId, speaker, lines, context).catch((): Direction[] => [])
   }, [characterId])
 
@@ -58,7 +63,9 @@ export function useDirector(controls: CharacterControls | null, characterId: str
     const parts = sentences(text).slice(0, MAX_LINES)
     if (!parts.length) return
     const asked = performance.now()
+    const heard = userLines.current
     const directions = await plan('character', text, parts)
+    if (userLines.current !== heard) return
     let said = 0
     const starts = parts.map((part) => { const start = said; said += part.length; return start })
     const duration = seconds && seconds > 0 ? seconds * 1000 : said * 55

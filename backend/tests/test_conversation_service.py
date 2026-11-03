@@ -27,7 +27,7 @@ class DummyTTS:
 
 
 def service(monkeypatch, llm=None, tts=None):
-    for name, value in (("OPENAI_API_KEY", llm), ("ELEVENLABS_API_KEY", tts)):
+    for name, value in (("DEEPSEEK_API_KEY", llm), ("ELEVENLABS_API_KEY", tts)):
         if value:
             monkeypatch.setenv(name, "test-key")
         else:
@@ -50,7 +50,7 @@ def test_earlier_turns_go_back_to_the_model(monkeypatch):
     llm = DummyLLM("Your cat, Miso.")
     history = [ChatTurn(role="user", content="My cat is Miso."), ChatTurn(role="assistant", content="Cute name!")]
     asyncio.run(service(monkeypatch, llm).process_text("Who is Miso?", history=history))
-    assert llm.calls[0]["history"] == [{"role": "user", "content": "My cat is Miso."}, {"role": "assistant", "content": '{"text": "Cute name!"}'}]
+    assert llm.calls[0]["history"] == [{"role": "user", "content": "My cat is Miso."}, {"role": "assistant", "content": "Cute name!"}]
 
 
 def test_without_a_voice_the_reply_is_text_only(monkeypatch):
@@ -58,7 +58,7 @@ def test_without_a_voice_the_reply_is_text_only(monkeypatch):
     assert (result.text, result.audio_url) == ("Hi.", "")
 
 
-def test_without_an_openai_key_the_reply_is_scripted(monkeypatch):
+def test_without_a_deepseek_key_the_reply_is_scripted(monkeypatch):
     result = asyncio.run(service(monkeypatch).process_text("hey there", character_id="kai"))
     assert result.text == "Hi! It's Kai. Nice to see you." and result.audio_url == ""
     # "this" contains "hi" but is not a greeting.

@@ -8,7 +8,7 @@ const controls = vi.hoisted(() => ({
   setEmotion: vi.fn(), playAnimation: vi.fn(), setActivity: vi.fn(), setAudioLevel: vi.fn(),
   startLipSync: vi.fn(), stopLipSync: vi.fn(), forceReturnToIdle: vi.fn(),
 }))
-const live = vi.hoisted(() => ({ connect: vi.fn(), close: vi.fn(() => Promise.resolve()) }))
+const live = vi.hoisted(() => ({ connect: vi.fn(), close: vi.fn(() => Promise.resolve()), line: (() => {}) as (speaker: 'user' | 'character', text: string) => void }))
 
 // WebGL does not run in jsdom: the stage reports ready with spy controls.
 vi.mock('./components/StageView', () => ({
@@ -21,7 +21,8 @@ vi.mock('./voice/live', async importOriginal => ({
   ...(await importOriginal<typeof import('./voice/live')>()),
   LiveClient: class {
     onChange = () => {}; onActivity = () => {}; onAudio = () => {}
-    connect = live.connect; close = live.close
+    connect = live.connect; close = live.close; setMuted = vi.fn(); finish = live.close
+    set onLine(handler: typeof live.line) { live.line = handler }
   },
 }))
 
@@ -91,10 +92,37 @@ it('starts voice for the shown character and ends it when switching characters',
   const mic = screen.getByRole('button', { name: 'Talk with your voice' })
   await waitFor(() => expect(mic).toBeEnabled())
   await userEvent.click(mic)
-  expect(live.connect).toHaveBeenCalledWith('kai')
+  expect(live.connect).toHaveBeenCalledWith('kai', [expect.objectContaining({ role: 'assistant' })])
   await act(async () => { await userEvent.click(screen.getByRole('button', { name: 'Mio' })) })
   expect(await screen.findByTestId('stage')).toHaveTextContent('Mio')
   expect(live.close).toHaveBeenCalled()
+})
+
+it('remembers what was said in Voice when back in Chat, and the other way round', async () => {
+  serve(true)
+  window.history.pushState({}, '', '/studio/mio')
+  render(<App />)
+  await waitFor(() => expect(screen.getByRole('button', { name: 'Voice' })).toBeEnabled())
+  await userEvent.click(screen.getByRole('button', { name: 'Voice' }))
+  act(() => { live.line('user', 'My cat is Momo.'); live.line('character', 'What a sweet name.') })
+  await userEvent.click(screen.getByRole('button', { name: 'Chat' }))
+  const box = await screen.findByRole('textbox', { name: 'Message' })
+  await waitFor(() => expect(box).toBeEnabled())
+  await userEvent.type(box, 'What is my cat called?{Enter}')
+  await screen.findByText('You said: What is my cat called?')
+  const calls = vi.mocked(fetch).mock.calls as unknown as [string, RequestInit][]
+  const [, request] = calls.find(([url]) => url.startsWith('/api/text-conversation'))!
+  expect(JSON.parse(String(request.body)).history.slice(-2)).toEqual([
+    { role: 'user', content: 'My cat is Momo.' },
+    { role: 'assistant', content: 'What a sweet name.' },
+  ])
+  // Typed turns reach the next voice session the same way.
+  await userEvent.click(screen.getByRole('button', { name: 'Voice' }))
+  await userEvent.click(screen.getByRole('button', { name: 'Talk with your voice' }))
+  expect(live.connect.mock.lastCall?.[1].slice(-2)).toEqual([
+    { role: 'user', content: 'What is my cat called?' },
+    { role: 'assistant', content: 'You said: What is my cat called?' },
+  ])
 })
 
 it('a typed message shows, small, above the reply', async () => {

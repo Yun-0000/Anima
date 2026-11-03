@@ -35,9 +35,9 @@ export function Conversation({ characterControls, character, mode, problem = nul
   const history = useRef<ChatTurn[]>([{ role: 'assistant', content: character.greeting }])
   const client = useRef<LiveClient | null>(null)
   const controls = useRef(characterControls)
-  const speak = useSpeech(characterControls)
+  const { speak, stop: stopSpeech } = useSpeech(characterControls)
   const { direct, directReply } = useDirector(characterControls, character.id)
-  const directRef = useRef({ direct, directReply })
+  const directRef = useRef({ direct, directReply, stopSpeech })
   const talking = voice.connected || voice.connecting
   const waiting = !!exchange.user && !exchange.reply
   // Drops a reply that arrives after leaving the room.
@@ -45,25 +45,35 @@ export function Conversation({ characterControls, character, mode, problem = nul
   useEffect(() => { mounted.current = true; return () => { mounted.current = false } }, [])
 
   useEffect(() => { controls.current = characterControls }, [characterControls])
-  useEffect(() => { directRef.current = { direct, directReply } }, [direct, directReply])
+  useEffect(() => { directRef.current = { direct, directReply, stopSpeech } }, [direct, directReply, stopSpeech])
 
   useEffect(() => {
     const live = new LiveClient()
     live.onChange = setVoice
     live.onAudio = (level) => controls.current?.setAudioLevel(level)
-    live.onActivity = (activity) => controls.current?.setActivity(activity)
-    live.onLine = (speaker, line) => { if (speaker === 'user') void directRef.current.direct('user', line); else directRef.current.directReply(line) }
+    live.onActivity = (activity) => {
+      // A chat reply may still be playing after switching to voice; whoever talks next takes over.
+      if (activity !== 'idle') directRef.current.stopSpeech()
+      controls.current?.setActivity(activity)
+    }
+    live.onLine = (speaker, line) => {
+      history.current = [...history.current, { role: speaker === 'user' ? 'user' as const : 'assistant' as const, content: line }].slice(-20)
+      if (speaker === 'user') void directRef.current.direct('user', line); else directRef.current.directReply(line)
+    }
     client.current = live
     return () => { void live.close(''); client.current = null }
   }, [])
 
-  useEffect(() => { if (mode === 'chat') void client.current?.close('') }, [mode])
+  // Switching to chat changes how the user talks, not the character: it finishes what it is saying.
+  useEffect(() => { if (mode === 'chat') void client.current?.finish() }, [mode])
 
   const send = async (raw: string) => {
     const text = raw.trim()
     if (!characterControls || waiting || !text) return
     setNotice(null)
     setMessage('')
+    // A voice reply still finishing gives way to the conversation going on in chat.
+    void client.current?.close('')
     setExchange({ user: text, reply: '' })
     void direct('user', text)
     try {
@@ -87,13 +97,15 @@ export function Conversation({ characterControls, character, mode, problem = nul
 
   const toggleVoice = () => {
     setNotice(null); setSeenStatus('')
-    if (talking) void client.current?.close('')
-    else void client.current?.connect(character.id)
+    if (!talking) void client.current?.connect(character.id, history.current)
+    else if (voice.connected) client.current?.setMuted(!voice.muted)
+    else void client.current?.close('')
   }
 
   // Why voice stopped shows until the next action.
   const voiceNotice = mode === 'voice' && !talking && voice.status !== seenStatus ? voice.status || null : null
-  const shownNotice = problem ?? notice ?? voiceNotice
+  // Connecting takes a second or two; words said before it is ready are not heard.
+  const shownNotice = problem ?? notice ?? (voice.connecting ? 'Connecting… talk once the ring appears.' : voiceNotice)
   const noticeLine = shownNotice && <p className="notice" role="status">{shownNotice}</p>
 
   const said = mode === 'chat' ? exchange.user : ''
@@ -111,9 +123,10 @@ export function Conversation({ characterControls, character, mode, problem = nul
         <button
           type="button"
           className="voice-button"
-          aria-pressed={talking}
-          aria-label={talking ? 'End voice chat' : 'Talk with your voice'}
-          title={voice.connecting ? 'Connecting…' : talking ? 'Listening · tap to stop' : `Tap to talk to ${character.label}`}
+          aria-pressed={voice.connected && !voice.muted}
+          aria-busy={voice.connecting}
+          aria-label={!talking ? 'Talk with your voice' : voice.muted ? 'Turn the microphone on' : 'Turn the microphone off'}
+          title={voice.connecting ? 'Connecting…' : !talking ? `Tap to talk to ${character.label}` : voice.muted ? 'Microphone off · tap to talk' : 'Listening · tap to mute'}
           disabled={!characterControls || !!problem}
           onClick={toggleVoice}
         >

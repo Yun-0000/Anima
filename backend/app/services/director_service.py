@@ -1,5 +1,6 @@
 import json
 import os
+import sys
 import re
 from typing import get_args
 
@@ -19,6 +20,10 @@ Most of the time the body needs no gesture: it stands and idles while listening 
 alive. Add a gesture only when the moment calls for it, the way a person would: a wave to greet or say goodbye, a nod to
 agree or acknowledge, a head shake for "no", a shrug for not knowing, or "explain" to gesture with the hands while
 explaining something. The same gesture line after line looks robotic. The face shows the feeling of the moment.
+If the user asks for a feeling or a gesture, or asks whether the character can do one, the body and face show it right
+then. When the character says it can do a gesture, the body does that gesture too.
+A feeling the user just asked for stays on the face through the reply to that request, and ends once the user talks
+about something else.
 Return one direction per line, in order:
 {"directions": [{"gesture": "none|wave|nod|shake|shrug|explain", "emotion": "neutral|relaxed|happy|sad|surprised|angry|wink"}]}"""
 
@@ -85,5 +90,5 @@ class DirectorService:
             # A line the model skipped gets no gesture.
             return DirectResponse(directions=[checked(directions[i] if i < len(directions) else {}) for i in range(len(lines))])
         except Exception as exc:
-            print(f"[Director] Falling back to rules: {type(exc).__name__}: {exc}")
+            print(f"[Director] Falling back to rules: {type(exc).__name__}: {exc}", file=sys.stderr)
             return by_rules(lines)

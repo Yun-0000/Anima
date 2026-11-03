@@ -64,7 +64,8 @@ function controlsFor(stage: Stage): CharacterControls {
       stopMeter = () => { clearInterval(timer); void context.close() }
     },
     stopLipSync,
-    forceReturnToIdle: () => { stopLipSync(); stage.setEmotion('neutral'); stage.setActivity('idle') },
+    // The face is the director's: it returns to neutral on its own, so a feeling can outlast the last word.
+    forceReturnToIdle: () => { stopLipSync(); stage.setActivity('idle') },
   }
 }
 

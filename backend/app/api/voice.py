@@ -1,4 +1,5 @@
 import os
+import sys
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException
@@ -42,9 +43,9 @@ async def create_live_session(request: LiveRequest):
                 headers={"xi-api-key": os.getenv("ELEVENLABS_API_KEY")},
             )
     except httpx.HTTPError as exc:
-        print(f"[Voice] Token request failed: {type(exc).__name__}: {exc}")
+        print(f"[Voice] Token request failed: {type(exc).__name__}: {exc}", file=sys.stderr)
         raise HTTPException(status_code=502, detail="Could not reach ElevenLabs to start voice.") from exc
     if response.status_code >= 400:
-        print(f"[Voice] Token request failed: {response.status_code} {response.text[:500]}")
+        print(f"[Voice] Token request failed: {response.status_code} {response.text[:500]}", file=sys.stderr)
         raise HTTPException(status_code=502, detail="ElevenLabs did not start the voice session.")
     return {"conversation_token": response.json()["token"], "overrides": session_overrides(request.character_id)}

@@ -10,10 +10,10 @@ def test_every_character_has_text_and_voice_prompts_with_its_name():
     assert set(CHARACTER_PROFILES) == {"mio", "rin", "kai"}
     for profile in CHARACTER_PROFILES.values():
         assert f"You are {profile.name}" in profile.system_prompt
-        assert '{"text": "your reply"}' in profile.system_prompt
         assert f"You are {profile.name}" in profile.voice_prompt
-        # Voice replies are spoken as they are; only chat replies are JSON.
-        assert "JSON" not in profile.voice_prompt
-        # Both know what the body can do, so they neither refuse nor promise other moves.
+        # Both are spoken as they are, so neither asks for a format around the words.
+        assert "JSON" not in profile.system_prompt and "JSON" not in profile.voice_prompt
+        # Both know what the body and face can do, so they neither refuse nor promise other moves.
         for prompt in (profile.system_prompt, profile.voice_prompt):
             assert "waves, nods, shakes its head, shrugs" in prompt and "gestures with its hands" in prompt
+            assert "sad, angry, surprised or relaxed" in prompt

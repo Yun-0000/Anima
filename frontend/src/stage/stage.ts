@@ -16,6 +16,10 @@ const GESTURE_SECONDS = 1.1
 const CAMERA = { position: [0, 1.32, 4.4], target: [0, 0.92, 0], fov: 32 } as const
 /** Narrow cards pull the view wider so at least this much floor width (world units, at the character) stays visible. */
 const MIN_HALF_WIDTH = 1.05
+/** How strongly a directed emotion shows; the face is small in the full-body view, so a little past the model's 1. */
+const EMOTION_WEIGHT = 1.15
+/** VRoid's whole-face emotions also shape the mouth. While talking, the brow and eye parts carry the feeling and lip sync has the mouth. */
+const FACE_PARTS: Partial<Record<EmotionName, string>> = { happy: 'Joy', sad: 'Sorrow', angry: 'Angry', surprised: 'Surprised', relaxed: 'Fun' }
 
 export class Stage {
   readonly scene = new THREE.Scene()
@@ -28,6 +32,11 @@ export class Stage {
   audioLevel = 0
   private emotion: EmotionName = 'neutral'
   private weights = new Map<string, number>()
+  /** Brow and eye morph targets per emotion, as [mesh, index]. */
+  private faceParts = new Map<string, [THREE.Mesh, number][]>()
+  /** 1 while the character is talking, blending the emotion off the mouth; `voicedAt` is when its voice was last heard. */
+  private talk = 0
+  private voicedAt = -1
   private winkUntil = -1
   private winkSide: 'blinkLeft' | 'blinkRight' = 'blinkLeft'
   private gesture?: { name: Gesture; start: number }
@@ -114,7 +123,16 @@ export class Stage {
       }
     })
     this.vrm = vrm; this.scene.add(vrm.scene)
-    this.breath = 0; this.sway = 0; this.nod.set(0, 0, 0); this.weights.clear()
+    this.breath = 0; this.sway = 0; this.nod.set(0, 0, 0); this.weights.clear(); this.faceParts.clear()
+    vrm.scene.traverse(object => {
+      if (!(object instanceof THREE.Mesh) || !object.morphTargetDictionary) return
+      for (const [emotion, part] of Object.entries(FACE_PARTS)) {
+        for (const morph of [`Fcl_BRW_${part}`, `Fcl_EYE_${part}`]) {
+          const index = object.morphTargetDictionary[morph]
+          if (index !== undefined) this.faceParts.set(emotion, [...(this.faceParts.get(emotion) ?? []), [object, index]])
+        }
+      }
+    })
     if (vrm.lookAt) vrm.lookAt.target = this.gaze
     this.motion = new MotionController(vrm); this.motion.preferences = preferences
     this.motion.onError = this.onStatus
@@ -213,15 +231,23 @@ export class Stage {
         expressions?.setValue('aa', this.audioLevel * 0.7)
         expressions?.setValue('oh', this.audioLevel * 0.3)
         const blend = 1 - Math.exp(-8 * dt)
+        // Words come in bursts; a short hold keeps the face from flickering between them.
+        if (this.audioLevel > 0.02) this.voicedAt = this.elapsed
+        this.talk += ((this.elapsed - this.voicedAt < 0.4 ? 1 : 0) - this.talk) * blend
         for (const name of ALL_EMOTIONS) {
           if (name === 'neutral') continue
           // A faint smile at rest; a wink adds a relaxed look for a moment.
-          let target = name === this.emotion ? 0.8 : 0
+          let target = name === this.emotion ? EMOTION_WEIGHT : 0
           if (name === 'happy' && this.emotion === 'neutral') target = 0.08
           if (name === 'relaxed' && this.elapsed < this.winkUntil + 0.1) target = Math.max(target, 0.4)
           const weight = this.weights.get(name) ?? target
           const next = weight + (target - weight) * blend
-          this.weights.set(name, next); expressions?.setValue(name, next)
+          this.weights.set(name, next)
+          // VRoid models name this one "Surprised", as a custom expression rather than the preset.
+          const expression = expressions?.getExpression(name) ?? (name === 'surprised' ? expressions?.getExpression('Surprised') : null)
+          // Set directly: setValue clamps to 1.
+          if (expression) expression.weight = next * (1 - this.talk)
+          for (const [mesh, index] of this.faceParts.get(name) ?? []) mesh.morphTargetInfluences![index] = next * this.talk
         }
         this.gaze.position.set(this.pointer.x * 1.2 + Math.sin(this.elapsed * 2.3) * 0.025, 1.03 + this.pointer.y * 0.4, 3)
         if (chest) chest.rotation.x += this.breath

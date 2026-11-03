@@ -1,13 +1,17 @@
 import { VoiceConversation } from '@elevenlabs/client'
 import type { Activity } from '../stage/catalog'
-import { apiBaseUrl, type Speaker } from '../api/client'
+import { apiBaseUrl, type ChatTurn, type Speaker } from '../api/client'
 
 /** A forgotten session must not keep billing the user's key. */
 export const IDLE_MS = 60_000
 const SESSION_TIMEOUT_MS = 30_000
-/** `answer` is what the character is saying (the subtitle). */
-export type VoiceSnapshot = { connected: boolean; connecting: boolean; status: string; answer: string }
-export const initialSnapshot: VoiceSnapshot = { connected: false, connecting: false, status: '', answer: '' }
+/** When leaving voice mode, the character's voice must be silent this long before the session ends. */
+const FINISH_QUIET_MS = 1200
+/** Output volume below this is silence; soft speech dips to about 0.01 between words. */
+const SILENT_VOLUME = 0.003
+/** `answer` is what the character is saying (the subtitle); `muted`: the user turned the microphone off. */
+export type VoiceSnapshot = { connected: boolean; connecting: boolean; muted: boolean; status: string; answer: string }
+export const initialSnapshot: VoiceSnapshot = { connected: false, connecting: false, muted: false, status: '', answer: '' }
 
 /** Replies may carry delivery tags for the voice, such as "[happy]"; they are not words to show. */
 export const spoken = (text: string) => text.replace(/\[[^\]]*\]\s*/g, '').trim()
@@ -27,10 +31,15 @@ export class LiveClient {
   private speaking = false
   /** The user is speaking (from the agent's voice detection). */
   private hearing = false
+  /** Leaving voice mode: the character finishes what it is saying, then the session ends. */
+  private ending = false
+  /** When the character's voice was last heard. The SDK's speaking mode flips with LiveKit's active speaker, so it is no guide. */
+  private lastVoice = 0
   private closing?: Promise<void>
   private update(patch: Partial<VoiceSnapshot>) { this.snapshot = { ...this.snapshot, ...patch }; this.onChange(this.snapshot) }
 
-  async connect(characterId: string) {
+  /** `history`: the conversation so far, opening with the greeting. */
+  async connect(characterId: string, history: ChatTurn[] = []) {
     if (this.abort || this.conversation || this.closing) return
     const abort = this.abort = new AbortController()
     this.update({ connecting: true, status: 'Connecting…', answer: '' })
@@ -49,13 +58,15 @@ export class LiveClient {
         onVadScore: ({ vadScore }) => {
           const hearing = vadScore > 0.6
           if (hearing === this.hearing) return
-          this.hearing = hearing; if (hearing) this.lastActive = Date.now()
+          // The user talking again keeps the session that was about to end.
+          this.hearing = hearing; if (hearing) { this.lastActive = Date.now(); this.ending = false }
           this.report()
         },
         onMessage: ({ role, message }) => {
           const line = spoken(message)
           if (!line) return
           this.lastActive = Date.now()
+          if (role === 'user') this.ending = false
           // A new exchange starts on screen when the user has spoken; the reply then replaces it.
           this.update({ answer: role === 'agent' ? line : '' })
           this.onLine(role === 'agent' ? 'character' : 'user', line)
@@ -63,12 +74,35 @@ export class LiveClient {
       })
       if (abort.signal.aborted) { await conversation.endSession(); return }
       this.conversation = conversation
-      this.every(50, () => this.onAudio(this.speaking ? Math.min(1, conversation.getOutputVolume() * 1.6) : 0))
+      // Each session starts blank; this informs the agent without making it answer.
+      if (history.length > 1) conversation.sendContextualUpdate(`Earlier in this conversation:\n${history.map(turn => `${turn.role === 'user' ? 'User' : 'You'}: ${turn.content}`).join('\n')}`)
+      this.every(50, () => {
+        const volume = conversation.getOutputVolume()
+        if (volume > SILENT_VOLUME) this.lastVoice = Date.now()
+        if (this.ending && Date.now() - this.lastVoice > FINISH_QUIET_MS) void this.close('')
+        // The volume alone drives the mouth: the SDK's speaking mode can say "listening" mid-sentence.
+        this.onAudio(Math.min(1, volume * 1.6))
+      })
       this.every(1000, () => { if (Date.now() - this.lastActive > IDLE_MS) void this.close('Voice ended after a minute of quiet') })
     } catch (error) {
       const canceled = error instanceof DOMException && error.name === 'AbortError'
       await this.close(canceled ? '' : error instanceof Error ? error.message : String(error))
     } finally { if (this.abort === abort) this.abort = undefined; this.update({ connecting: false }) }
+  }
+  /** Leaving voice mode: stop listening at once, but let the character finish what it is saying before the session ends. */
+  finish(): Promise<void> {
+    if (!this.conversation || Date.now() - this.lastVoice > FINISH_QUIET_MS) return this.close('')
+    this.ending = true
+    this.setMuted(true)
+    return Promise.resolve()
+  }
+  /** The microphone button: only stops or resumes hearing the user. The session, and what the character is saying, go on.
+   *  Turning it back on while the session was finishing means the user wants to talk, so the session stays. */
+  setMuted(muted: boolean) {
+    if (!this.conversation) return
+    if (!muted) this.ending = false
+    this.conversation.setMicMuted(muted)
+    this.update({ muted })
   }
   private every(ms: number, run: () => void) { this.timers.add(setInterval(run, ms)) }
   private report() { this.onActivity(this.hearing ? 'listening' : this.speaking ? 'speaking' : 'idle') }
@@ -83,8 +117,8 @@ export class LiveClient {
     const conversation = this.conversation
     this.conversation = undefined
     await conversation?.endSession().catch(() => {})
-    this.speaking = false; this.hearing = false
+    this.speaking = false; this.hearing = false; this.ending = false
     this.onAudio(0); this.onActivity('idle')
-    this.update({ connected: false, connecting: false, status })
+    this.update({ connected: false, connecting: false, muted: false, status })
   }
 }

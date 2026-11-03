@@ -35,6 +35,41 @@ it('directs a whole reply at once, knowing the conversation, and plays each sent
   vi.useRealTimers(); vi.unstubAllGlobals()
 })
 
+it('drops what a reply had left to act out when the user talks again', async () => {
+  vi.useFakeTimers()
+  vi.stubGlobal('fetch', vi.fn(async (_url: string, init?: RequestInit) => {
+    const { speaker, lines } = JSON.parse(String(init?.body))
+    return new Response(JSON.stringify({ directions: speaker === 'user' ? [{ gesture: 'none', emotion: 'neutral' }] : lines.map(() => ({ gesture: 'explain', emotion: 'happy' })) }))
+  }))
+  const controls = { setEmotion: vi.fn(), playAnimation: vi.fn() }
+  const { result } = renderHook(() => useDirector(controls as never, 'mio'))
+  await act(async () => { await result.current.directReply('Hello there! Let me tell you how tea is made.', 10); await vi.advanceTimersByTimeAsync(0) })
+  expect(controls.playAnimation).toHaveBeenCalledTimes(1)
+  await act(async () => { await vi.advanceTimersByTimeAsync(2000); await result.current.direct('user', 'Wait, actually') })
+  await act(async () => { await vi.advanceTimersByTimeAsync(20000) })
+  expect(controls.playAnimation).toHaveBeenCalledTimes(1)
+  vi.useRealTimers(); vi.unstubAllGlobals()
+})
+
+it('ignores a reply\'s plan that arrives after the user talked again', async () => {
+  let answer: (response: Response) => void = () => {}
+  vi.stubGlobal('fetch', vi.fn((_url: string, init?: RequestInit) => JSON.parse(String(init?.body)).speaker === 'user'
+    ? Promise.resolve(new Response(JSON.stringify({ directions: [{ gesture: 'none', emotion: 'neutral' }] })))
+    : new Promise<Response>(resolve => { answer = resolve })))
+  const controls = { setEmotion: vi.fn(), playAnimation: vi.fn() }
+  const { result } = renderHook(() => useDirector(controls as never, 'mio'))
+  let reply = Promise.resolve()
+  await act(async () => {
+    reply = result.current.directReply('Let me tell you.')
+    await result.current.direct('user', 'Wait, actually')
+    answer(new Response(JSON.stringify({ directions: [{ gesture: 'explain', emotion: 'happy' }] })))
+    await reply
+    await new Promise(resolve => setTimeout(resolve, 10))
+  })
+  expect(controls.playAnimation).not.toHaveBeenCalled()
+  vi.unstubAllGlobals()
+})
+
 it('does not repeat a gesture while it plays, nor crowd gestures together', async () => {
   vi.useFakeTimers()
   vi.stubGlobal('fetch', vi.fn(async (_url: string, init?: RequestInit) => {
