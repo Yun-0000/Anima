@@ -225,9 +225,11 @@ export class Stage {
         const blink = this.blinkStart >= 0 ? Math.max(0, 1 - Math.abs(this.elapsed - this.blinkStart - 0.09) / 0.09) : 0
         const winking = this.elapsed < this.winkUntil
         const expressions = vrm.expressionManager
-        expressions?.setValue('blink', this.motion?.dozing ? 1 : winking ? 0 : blink)
-        expressions?.setValue('blinkLeft', winking && this.winkSide === 'blinkLeft' ? 1 : 0)
-        expressions?.setValue('blinkRight', winking && this.winkSide === 'blinkRight' ? 1 : 0)
+        // A happy face already closes the eyes; a blink on top pushes the lids past closed. VRM's overrideBlink "blend" does this, but VRoid 0.x files leave it out.
+        const open = Math.max(0, 1 - (this.weights.get('happy') ?? 0))
+        expressions?.setValue('blink', this.motion?.dozing ? 1 : winking ? 0 : blink * open)
+        expressions?.setValue('blinkLeft', winking && this.winkSide === 'blinkLeft' ? open : 0)
+        expressions?.setValue('blinkRight', winking && this.winkSide === 'blinkRight' ? open : 0)
         expressions?.setValue('aa', this.audioLevel * 0.7)
         expressions?.setValue('oh', this.audioLevel * 0.3)
         const blend = 1 - Math.exp(-8 * dt)
