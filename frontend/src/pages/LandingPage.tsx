@@ -7,7 +7,7 @@ const host = CHARACTER_OPTIONS[0]
 export function LandingPage() {
   return (
     <div className="scene-page landing">
-      <StageView character={host} idle="idle_249" greet="wave" rests />
+      <StageView character={host} idle="idle_249" greet="wave" rests zoom={1.3} lift={0.08} />
       <header className="overlay-bar">
         <span className="brand">anima</span>
       </header>
