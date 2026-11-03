@@ -27,15 +27,15 @@ interface StageViewProps {
   idle?: string
   /** Without the room. */
   bare?: boolean
-  /** On arrival. A room smiles instead of waving, as the conversation's hello would repeat a wave. */
-  greet?: 'wave' | 'smile'
+  /** On arrival. A room starts in its idle: the conversation's hello would repeat a wave. */
+  greet?: 'wave'
   /** Rest 3-6 s between idles instead of 1-2.5 s. */
   rests?: boolean
 }
 
-function react(stage: Stage, action: 'wave' | 'nod' | 'smile' = 'wave') {
+function react(stage: Stage, action: 'wave' | 'nod' = 'wave') {
   stage.setEmotion('happy')
-  if (action !== 'smile') stage.play(action)
+  stage.play(action)
   setTimeout(() => stage.setEmotion('neutral'), 2600)
 }
 

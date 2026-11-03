@@ -40,7 +40,7 @@ export function StudioPage() {
   return (
     <div className="scene-page">
       {/* Zoomed in and lifted so the character stands above the conversation. */}
-      <StageView character={character} onReady={setControls} zoom={1.26} lift={0.12} greet="smile" />
+      <StageView character={character} onReady={setControls} zoom={1.26} lift={0.12} />
       <header className="overlay-bar">
         <Link to="/characters" className="back-button"><span aria-hidden="true">←</span>Characters</Link>
         <div className="mode-switch" role="group" aria-label="Conversation mode">
