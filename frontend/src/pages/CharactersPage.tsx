@@ -36,7 +36,7 @@ export function CharactersPage() {
       </header>
 
       <div className="feature__figure">
-        <StageView character={character} bare awake rests zoom={FIGURE.zoom} lift={FIGURE.lift} />
+        <StageView character={character} bare rests zoom={FIGURE.zoom} lift={FIGURE.lift} />
       </div>
 
       <main className="feature">

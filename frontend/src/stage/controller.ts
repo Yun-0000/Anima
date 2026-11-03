@@ -6,8 +6,6 @@ import type { Activity, MotionName } from './catalog'
 
 /** Top of the rug the character stands on (world units). */
 const FLOOR = 0.012
-/** Dozing is standing with closed eyes. */
-type Choice = MotionName | 'doze'
 
 export class MotionController {
   mixer: THREE.AnimationMixer
@@ -24,10 +22,7 @@ export class MotionController {
   private action?: THREE.AnimationAction
   private generation = 0
   private dwell = 0
-  private quiet = Infinity
   private disposed = false
-  preferences: Partial<Record<Choice, number>> = {}
-  dozing = false
   /** Height of the sole below the ankle bone, measured in the bind pose. */
   private sole = 0
   onError: (message: string) => void = () => {}
@@ -40,23 +35,20 @@ export class MotionController {
     const bottom = new THREE.Box3().setFromObject(vrm.scene).min.y
     if (ankle !== undefined && Number.isFinite(bottom)) this.sole = Math.max(0, ankle - bottom)
   }
-  async play(name: MotionName, intent: { dwell?: number; dozing?: boolean; file?: string } = {}) {
-    this.dozing = false
+  async play(name: MotionName, intent: { dwell?: number; file?: string } = {}) {
     const [file, clip] = this.clip(name, intent.file)
     // Idles play once and rest; a version chosen in the lab loops so it can be watched.
     const once = name === 'idle' && !intent.file
     await this.start(name, clip, motions[name].loop, { ...intent, once }, file)
   }
   playFile(url: string, loop: boolean) {
-    this.dozing = false
     return this.start('custom', loadMeshyAnimation(url, this.vrm), loop, { dwell: Infinity }, url)
   }
-  private async start(name: MotionName | 'custom', clip: Promise<THREE.AnimationClip>, loop: boolean, intent: { dwell?: number; dozing?: boolean; once?: boolean }, file: string) {
+  private async start(name: MotionName | 'custom', clip: Promise<THREE.AnimationClip>, loop: boolean, intent: { dwell?: number; once?: boolean }, file: string) {
     const generation = ++this.generation
     try {
       const resolved = await clip
       if (this.disposed || generation !== this.generation) return
-      if (intent.dozing) this.dozing = true
       const next = this.mixer.clipAction(resolved)
       if (next === this.action && loop && !intent.once && !next.paused) { if (intent.dwell) this.dwell = intent.dwell; return }
       next.reset().setLoop(loop && !intent.once ? THREE.LoopRepeat : THREE.LoopOnce, Infinity)
@@ -96,7 +88,6 @@ export class MotionController {
     if (this.activity === activity) return
     const alone = this.activity === 'idle'
     this.activity = activity
-    if (activity !== 'idle') this.dozing = false
     // In conversation the next idle comes after a short rest, not the long one of being alone.
     if (alone && activity !== 'idle' && this.current === 'idle' && this.action) {
       const left = Math.max(0, this.action.getClip().duration - this.action.time)
@@ -107,20 +98,10 @@ export class MotionController {
   }
   update(dt: number) {
     this.mixer.update(dt)
-    this.quiet = this.activity === 'speaking' ? 0 : this.quiet + dt
     this.dwell -= dt
-    if (this.autonomous && this.activity === 'idle' && this.dwell <= 0) {
-      // After dozing, wake up (idle) before doing anything else; just after talking, stay awake.
-      const names: Choice[] = this.dozing || this.quiet < 15 ? ['idle'] : ['idle', 'doze']
-      const total = names.reduce((sum, name) => sum + (this.preferences[name] ?? 1), 0)
-      let weight = Math.random() * total
-      const name = names.find(name => (weight -= this.preferences[name] ?? 1) < 0) ?? 'idle'
+    // Alone or in conversation, after an idle and its rest or after a gesture, the next idle.
+    if ((this.autonomous || this.activity !== 'idle') && this.dwell <= 0) {
       // Placeholder until the clip starts; play() then sets the real dwell.
-      this.dwell = 12
-      void this.play('idle', name === 'doze' ? { dwell: 20, dozing: true } : {})
-    }
-    // In conversation, after an idle and its rest or after a gesture, the next idle.
-    if (this.activity !== 'idle' && this.dwell <= 0) {
       this.dwell = 12
       void this.play('idle')
     }

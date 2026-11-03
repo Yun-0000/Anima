@@ -11,8 +11,6 @@ function setup() {
   return { scene, controller }
 }
 const settle = async () => { await Promise.resolve(); await Promise.resolve() }
-/** Preferences that make the character always choose one thing. */
-const only = (choice: string) => Object.fromEntries(['idle', 'doze'].map(name => [name, name === choice ? 1 : 0]))
 it('picks only in-place motions and never moves the character across the room', async () => {
   const { controller, scene } = setup()
   for (let i = 0; i < 20; i++) { controller.update(31); await settle() }
@@ -34,16 +32,6 @@ it('replays a completed single-use action', async () => {
   expect(again.time).toBeCloseTo(0.1)
   controller.dispose()
 })
-it('dozing closes the eyes while standing and waking opens them', async () => {
-  const { controller } = setup()
-  controller.preferences = only('doze')
-  controller.update(0); await settle()
-  expect(controller.current).toBe('idle')
-  expect(controller.dozing).toBe(true)
-  controller.update(21); await settle()
-  expect(controller.dozing).toBe(false)
-  controller.dispose()
-})
 it('speaks standing, going on through the idle versions', async () => {
   const { controller } = setup()
   controller.autonomous = false
@@ -57,9 +45,8 @@ it('speaks standing, going on through the idle versions', async () => {
   expect(controller.file).not.toBe(first)
   controller.dispose()
 })
-it('a gesture at the end of speech is not held: an idle follows, awake', async () => {
+it('a gesture at the end of speech is not held: an idle follows', async () => {
   const { controller } = setup()
-  controller.preferences = only('doze')
   await controller.play('idle')
   controller.setActivity('speaking'); controller.update(0)
   await controller.play('shrug')
@@ -67,12 +54,10 @@ it('a gesture at the end of speech is not held: an idle follows, awake', async (
   // The one-second test shrug ends; its last pose used to hold for 15 s.
   controller.update(1.1); await settle()
   expect(controller.current).toBe('idle')
-  expect(controller.dozing).toBe(false)
   controller.dispose()
 })
 it('left alone, it switches between the idle versions instead of repeating one', async () => {
   const { controller } = setup()
-  controller.preferences = { idle: 1, doze: 0 }
   const seen: string[] = []
   for (let i = 0; i < 6; i++) { controller.update(25); await settle(); seen.push(controller.file) }
   for (let i = 1; i < seen.length; i++) expect(seen[i]).not.toBe(seen[i - 1])
@@ -81,13 +66,11 @@ it('left alone, it switches between the idle versions instead of repeating one',
 it('a pinned idle version is always used for idling', async () => {
   const { controller } = setup()
   controller.idleFile = 'idle_249'
-  controller.preferences = { idle: 1, doze: 0 }
   for (let i = 0; i < 4; i++) { controller.update(25); await settle(); expect(controller.file).toBe('idle_249') }
   controller.dispose()
 })
 it('idling plays a version once, then holds still before the next one', async () => {
   const { controller } = setup()
-  controller.preferences = { idle: 1, doze: 0 }
   controller.rest = [3, 6]
   controller.update(0); await settle()
   const first = controller.file
@@ -101,7 +84,6 @@ it('idling plays a version once, then holds still before the next one', async ()
 
 it('a shorter rest (the studio) moves on sooner', async () => {
   const { controller } = setup()
-  controller.preferences = { idle: 1, doze: 0 }
   controller.rest = [1, 2.5]
   controller.update(0); await settle()
   const first = controller.file

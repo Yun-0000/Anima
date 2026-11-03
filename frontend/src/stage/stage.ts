@@ -101,7 +101,7 @@ export class Stage {
     this.fit(); this.resume()
   }
   /** Shows a character; resolves false when a newer load superseded this one. */
-  async load(model: string, preferences: Partial<Record<string, number>> = {}): Promise<boolean> {
+  async load(model: string): Promise<boolean> {
     const generation = ++this.generation
     this.onStatus('Loading…')
     const loader = new GLTFLoader(); loader.register(parser => new VRMLoaderPlugin(parser))
@@ -134,7 +134,7 @@ export class Stage {
       }
     })
     if (vrm.lookAt) vrm.lookAt.target = this.gaze
-    this.motion = new MotionController(vrm); this.motion.preferences = preferences
+    this.motion = new MotionController(vrm)
     this.motion.onError = this.onStatus
     await this.motion.play('idle')
     if (this.disposed || generation !== this.generation) return false
@@ -227,7 +227,7 @@ export class Stage {
         const expressions = vrm.expressionManager
         // A happy face already closes the eyes; a blink on top pushes the lids past closed. VRM's overrideBlink "blend" does this, but VRoid 0.x files leave it out.
         const open = Math.max(0, 1 - (this.weights.get('happy') ?? 0))
-        expressions?.setValue('blink', this.motion?.dozing ? 1 : winking ? 0 : blink * open)
+        expressions?.setValue('blink', winking ? 0 : blink * open)
         expressions?.setValue('blinkLeft', winking && this.winkSide === 'blinkLeft' ? open : 0)
         expressions?.setValue('blinkRight', winking && this.winkSide === 'blinkRight' ? open : 0)
         expressions?.setValue('aa', this.audioLevel * 0.7)

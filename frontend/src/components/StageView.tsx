@@ -29,7 +29,6 @@ interface StageViewProps {
   bare?: boolean
   /** On arrival. A room smiles instead of waving, as the conversation's hello would repeat a wave. */
   greet?: 'wave' | 'smile'
-  awake?: boolean
   /** Rest 3-6 s between idles instead of 1-2.5 s. */
   rests?: boolean
 }
@@ -70,7 +69,7 @@ function controlsFor(stage: Stage): CharacterControls {
 }
 
 /** The stage lives as long as this component; switching characters reloads only the model. */
-export function StageView({ character, onReady, className = '', zoom = 1, lift = 0, idle = '', bare = false, greet, awake = false, rests = false }: StageViewProps) {
+export function StageView({ character, onReady, className = '', zoom = 1, lift = 0, idle = '', bare = false, greet, rests = false }: StageViewProps) {
   const host = useRef<HTMLDivElement>(null)
   const stage = useRef<Stage | null>(null)
   const ready = useRef(onReady)
@@ -98,7 +97,7 @@ export function StageView({ character, onReady, className = '', zoom = 1, lift =
   useEffect(() => {
     const current = stage.current!
     let active = true
-    current.load(character.modelUrl, awake ? { ...character.preferences, doze: 0 } : character.preferences)
+    current.load(character.modelUrl)
       .then((shown) => {
         if (!active || !shown) return
         setLoadedId(character.id)
@@ -111,7 +110,7 @@ export function StageView({ character, onReady, className = '', zoom = 1, lift =
         if (active) setFailedId(character.id)
       })
     return () => { active = false }
-  }, [character, idle, greet, awake, rests])
+  }, [character, idle, greet, rests])
 
   const onClick = (event: React.MouseEvent) => {
     const current = stage.current

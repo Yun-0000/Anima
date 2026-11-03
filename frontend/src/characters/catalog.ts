@@ -7,8 +7,6 @@ export interface CharacterOption {
   preview: string
   /** Background tint on the characters page. */
   tint: string
-  /** Weights for what the character does when left alone. */
-  preferences: Partial<Record<string, number>>
 }
 
 export const CHARACTER_OPTIONS = [
@@ -20,7 +18,6 @@ export const CHARACTER_OPTIONS = [
     modelUrl: '/models/sample_a.vrm',
     preview: '/characters/mio.png',
     tint: '#ece3da',
-    preferences: { idle: 5, doze: 0.5 },
   },
   {
     id: 'rin',
@@ -30,7 +27,6 @@ export const CHARACTER_OPTIONS = [
     modelUrl: '/models/sample_b.vrm',
     preview: '/characters/rin.png',
     tint: '#e7e1ef',
-    preferences: { idle: 6, doze: 0.2 },
   },
   {
     id: 'kai',
@@ -40,7 +36,6 @@ export const CHARACTER_OPTIONS = [
     modelUrl: '/models/sample_c.vrm',
     preview: '/characters/kai.png',
     tint: '#dfe3e6',
-    preferences: { idle: 3, doze: 2 },
   },
 ] as const satisfies readonly CharacterOption[]
 
